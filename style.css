@@ -23,7 +23,7 @@ body {
   overflow-x: hidden;
   background: var(--body);
   width: 100%;
-  background-image: url('pics\webbg2.png');
+  background-image: url('webbg2.jpeg');
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
@@ -145,7 +145,7 @@ h2 {
   background-position: center;
   height: 110px;
   background-size: 100% 100%;
-  background-image: url("pics\usrbg.png");
+  background-image: url('usrbg.jpeg');
   object-fit: cover;
   display: flex;
   margin: -20px 0 0 0;
@@ -165,7 +165,7 @@ h2 {
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
-  background-image: url("pics\USERIMG.png");
+  background-image: url('USERIMG.jpeg');
 }
 
 .textBox {
