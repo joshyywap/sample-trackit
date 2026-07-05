@@ -1,0 +1,119 @@
+/* ===========================
+   QRent Terms & Regulations
+=========================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+   font-family: Arial, Helvetica, sans-serif;
+    background: #f4f6fb;
+    color: #333;
+    line-height: 1.8;
+    font-size: xx-large;
+    padding: 20px 150px 0 150px;
+}
+
+.container{
+    width:90%;
+    max-width:900px;
+    margin:40px auto;
+    background:#fff;
+    border-radius:18px;
+    padding:35px;
+    box-shadow:0 15px 35px rgba(0,0,0,.15);
+}
+
+h1{
+    text-align:center;
+    color:#8000ff;
+    margin-bottom:15px;
+    font-size:3rem;
+}
+
+.intro{
+    text-align:center;
+    color:#ea0000;
+    margin-bottom:25px;
+    font-size:30px;
+}
+
+h3{
+    color:#8000ff;
+    margin-top:30px;
+    margin-bottom:12px;
+    font-size:3rem;
+}
+
+p{
+    text-align:justify;
+    color:#555;
+    margin-bottom:15px;
+}
+
+hr{
+    border:none;
+    border-top:2px solid #ececec;
+    margin:25px 0;
+}
+
+/* Highlight boxes */
+.notice{
+    background:#f3ecff;
+    border-left:6px solid #8000ff;
+    padding:18px;
+    border-radius:10px;
+    margin:25px 0;
+}
+
+/* Feedback list */
+ul{
+    margin:10px 0 20px 25px;
+}
+
+li{
+    margin-bottom:8px;
+}
+
+/* Back button */
+.backBtn{
+    display:inline-block;
+    margin-top:35px;
+    padding:12px 25px;
+    background:#8000ff;
+    color:#fff;
+    text-decoration:none;
+    border-radius:30px;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.backBtn:hover{
+    background:#6400cc;
+    transform:translateY(-2px);
+}
+
+/* Mobile */
+@media(max-width:768px){
+
+    .container{
+        width:95%;
+        padding:20px;
+    }
+
+    h1{
+        font-size:1.6rem;
+    }
+
+    h3{
+        font-size:1.1rem;
+    }
+
+    p{
+        font-size:15px;
+    }
+
+}
