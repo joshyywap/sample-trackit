@@ -22,8 +22,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   width: 100%;
-  font-family: sans-serif;
-  background-image: url('webbg2.jpeg');
+  font-family:sans-serif;
+  background-image: url('webbg2.png');
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
@@ -351,7 +351,7 @@ h2 {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  background-image: url('usrbg.png');
+  background-image: url("webbg2.jpeg");
   border-radius: 10px;
   margin-bottom: 12px;
   overflow: hidden;
@@ -617,7 +617,13 @@ outline: none;
   text-align: center;
   margin-bottom: 5px;
 }
-
+#homeSearchInput
+{
+  margin: 15px 30px 140px 30px;
+}
+#homeSearchResults{
+  margin:-130px 30px 100px 30px;
+}
 .fileLabel {
   display: block;
   margin: 15px 0 5px;
@@ -656,7 +662,8 @@ outline: none;
 }
 
 #generateQrBtn,
-#saveItemBtn {
+#saveItemBtn,
+#saveQrBtn {
   width: 100%;
   height: clamp(42px, 11vw, 46px);
   border: 2px solid #8000ff;
@@ -1209,4 +1216,19 @@ margin: 0 1.5rem;
   flex: 1;
   border-bottom: 2px solid rgba(255, 255, 255, 0.6);
   margin: 0 12px;
+}
+/* =========================================================
+   INVENTORY — toolbox section title
+   ========================================================= */
+.inventorySectionTitle {
+  text-align: center;
+  font-family: "Lucida Sans", sans-serif;
+  font-weight: 700;
+  font-size: clamp(13px, 3.5vw, 15px);
+  color: #000000;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: 18px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #39383a46;
 }
