@@ -1,412 +1,462 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="stylesheet" href="style.css?v=3" />
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<link rel="stylesheet" href="style.css?v=4" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Changa+One:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Changa+One:ital@0;1&display=swap" rel="stylesheet" />
 
-  <title>Trackit</title>
+<title>Trackit</title>
 </head>
 
 <body>
-  <nav>
-    <div class="navbar">
-      <h2>TrackIT</h2>
+<nav>
+<div class="navbar">
+<h2>TrackIT</h2>
 
-      <div class="event-wrapper">
-        <input type="checkbox" checked id="menuToggle" class="event-wrapper-inp" />
+<div class="event-wrapper">
+<input type="checkbox" checked id="menuToggle" class="event-wrapper-inp" />
 
-        <label for="menuToggle" class="bar">
-          <span class="top bar-list"></span>
-          <span class="middle bar-list"></span>
-          <span class="bottom bar-list"></span>
-        </label>
+<label for="menuToggle" class="bar">
+<span class="top bar-list"></span>
+<span class="middle bar-list"></span>
+<span class="bottom bar-list"></span>
+</label>
 
-        <section class="menu-container" id="menuContainer">
-          <div class="usr-card">
-            <div class="img"></div>
-            <div class="textBox">
-              <div class="textContent">
-                <p class="h1">LOGGED IN AS</p>
-              </div>
-              <p class="usr-name" id="usrName">Guest</p>
-              <p class="usr-lrn" id="usrLrn"></p>
-            </div>
-          </div>
+<section class="menu-container" id="menuContainer">
+<div class="usr-card">
+<div class="img"></div>
+<div class="textBox">
+<div class="textContent">
+<p class="h1">LOGGED IN AS</p>
+</div>
+<p class="usr-name" id="usrName">Guest</p>
+<p class="usr-lrn" id="usrLrn"></p>
+</div>
+</div>
 
-          <!-- ============ SHOWN WHEN NOT LOGGED IN ============ -->
-          <div id="authButtons">
-            <div id="authChoice">
-              <div class="menu-list" onclick="showAuthForm('login')">Login</div>
-              <div class="menu-list" onclick="showAuthForm('register')">Register</div>
-              <a href="terms.html" class="termsBtn">
-                Don't be Lazy and read Terms & Regulations
-              </a>
-            </div>
+<!-- ============ SHOWN WHEN NOT LOGGED IN ============ -->
+<div id="authButtons">
+<div id="authChoice">
+<div class="menu-list" onclick="showAuthForm('login')">Login</div>
+<div class="menu-list" onclick="showAuthForm('register')">Register</div>
+<a href="terms.html" class="termsBtn">
+Don't be Lazy and read Terms & Regulations
+</a>
+</div>
 
-            <div id="authFormWrapper" style="display:none;">
-              <form class="form_main" id="authForm" action="" onsubmit="handleAuthSubmit(event)">
-                <p class="heading" id="formHeading">Login</p>
+<div id="authFormWrapper" style="display:none;">
+<form class="form_main" id="authForm" action="" onsubmit="handleAuthSubmit(event)">
+<p class="heading" id="formHeading">Login</p>
 
-                <div class="inputContainer">
-                  <input
-                    placeholder="Full Name"
-                    id="fullName"
-                    class="inputField"
-                    type="text"
-                    maxlength="50"
-                    required
-                    pattern="^[A-Za-z ]{2,50}$"
-                    title="Letters and spaces only"
-                    autocomplete="name"
-                    style="padding-left:15px;"
-                  />
-                </div>
+<div class="inputContainer">
+<input
+placeholder="Full Name"
+id="fullName"
+class="inputField"
+type="text"
+maxlength="50"
+required
+pattern="^[A-Za-z ]{2,50}$"
+title="Letters and spaces only"
+autocomplete="name"
+style="padding-left:15px;"
+/>
+</div>
 
-                <div class="inputContainer">
-                  <input
-                    placeholder="LRN"
-                    id="lrn"
-                    class="inputField"
-                    type="text"
-                    inputmode="numeric"
-                    maxlength="12"
-                    required
-                    pattern="^[0-9]{12}$"
-                    title="LRN must be exactly 12 digits"
-                    autocomplete="off"
-                    style="padding-left:15px;"
-                  />
-                </div>
+<div class="inputContainer">
+<input
+placeholder="LRN"
+id="lrn"
+class="inputField"
+type="text"
+inputmode="numeric"
+maxlength="12"
+required
+pattern="^[0-9]{12}$"
+title="LRN must be exactly 12 digits"
+autocomplete="off"
+style="padding-left:15px;"
+/>
+</div>
 
-                <div class="inputContainer">
-                  <input
-                    placeholder="Password"
-                    id="password"
-                    class="inputField"
-                    type="password"
-                    minlength="8"
-                    maxlength="64"
-                    required
-                    autocomplete="current-password"
-                    style="padding-left:15px; padding-right:40px;"
-                  />
-                  <span
-                    id="togglePasswordIcon"
-                    class="eyeIcon"
-                    onclick="togglePasswordVisibility()"
-                    style="cursor:pointer; position:absolute; right:12px;"
-                    title="Show/Hide"
-                  >
-                    𓁹
-                  </span>
-                </div>
+<div class="inputContainer">
+<input
+placeholder="Password"
+id="password"
+class="inputField"
+type="password"
+minlength="8"
+maxlength="64"
+required
+autocomplete="current-password"
+style="padding-left:15px; padding-right:40px;"
+/>
+<span
+id="togglePasswordIcon"
+class="eyeIcon"
+onclick="togglePasswordVisibility()"
+style="cursor:pointer; position:absolute; right:12px;"
+title="Show/Hide"
+>
+𓁹
+</span>
+</div>
 
-                <div class="inputContainer" id="sectionRow" style="display:none;">
-                  <input
-                    placeholder="Section (must be 12-Dewey)"
-                    id="section"
-                    class="inputField"
-                    type="text"
-                    maxlength="20"
-                    style="padding-left:15px;"
-                    autocomplete="off"
-                  />
-                </div>
+<div class="inputContainer" id="sectionRow" style="display:none;">
+<input
+placeholder="Section (must be 12-Dewey)"
+id="section"
+class="inputField"
+type="text"
+maxlength="20"
+style="padding-left:15px;"
+autocomplete="off"
+/>
+</div>
 
-                <p id="authError" style="color:crimson; font-size:.75em; min-height:14px; margin:0; text-align:center;"></p>
+<p id="authError" style="color:crimson; font-size:.75em; min-height:14px; margin:0; text-align:center;"></p>
 
-                <button id="button" type="submit">Submit</button>
+<button id="button" type="submit">Submit</button>
 
-                <div class="signupContainer">
-                  <p id="signupPrompt">Don't have any account?</p>
-                  <a href="#" id="toggleModeLink">Sign up</a>
-                </div>
+<div class="signupContainer">
+<p id="signupPrompt">Don't have any account?</p>
+<a href="#" id="toggleModeLink">Sign up</a>
+</div>
 
-                <a href="#" id="backToChoiceLink">RETURN</a>
-              </form>
-            </div>
-          </div>
+<a href="#" id="backToChoiceLink">RETURN</a>
+</form>
+</div>
+</div>
 
-          <!-- ============ SHOWN WHEN LOGGED IN ============ -->
-          <div id="accountButtons" style="display:none;">
-            <div class="pillBtn" onclick="openAddItemModal()">Add Item</div>
-            <div class="pillBtn" onclick="openDeleteItemModal()">Delete Item</div>
-            <div class="pillBtn" onclick="openLostFoundModal()">Lost and Found</div>
-            <div class="pillBtn" onclick="openBorrowerListModal()">List of Borrower</div>
-            <div class="pillBtn" onclick="openInventoryModal()">Inventory</div>
-            <div class="pillBtn danger" onclick="logout()">Logout</div>
-          </div>
-        </section>
-      </div>
-    </div>
-  </nav>
+<!-- ============ SHOWN WHEN LOGGED IN ============ -->
+<div id="accountButtons" style="display:none;">
+<div class="pillBtn" onclick="openAddItemModal()">Add Item</div>
+<div class="pillBtn" onclick="openDeleteItemModal()">Delete Item</div>
+<div class="pillBtn" onclick="openLostFoundModal()">Lost and Found</div>
+<div class="pillBtn" onclick="openBorrowerListModal()">List of Borrower</div>
+<div class="pillBtn" onclick="openSearchByQrModal()">Search Item by QR</div>
+<div class="pillBtn" onclick="openInventoryModal()">Inventory</div>
+<div class="pillBtn danger" onclick="logout()">Logout</div>
+</div>
+</section>
+</div>
+</div>
+</nav>
 
-  <div class="paragraph">
-    Need to borrow classroom items? You're in the right place! Borrow, return and keep track of items quickly and easily - all in one place.
+<div class="paragraph">
+Need to borrow classroom items? You're in the right place! Borrow, return and keep track of items quickly and easily - all in one place.
+</div>
+
+<!-- Borrow/Return: only visible when logged in (toggled via JS in updateMenuUI) -->
+<button id="bottone1" class="hiddenForGuest" onclick="openBorrowModal()"><strong>BORROW ITEMS</strong></button>
+<button id="bottone2" class="hiddenForGuest" onclick="openReturnModal()"><strong>RETURN ITEMS</strong></button>
+
+<div class="section-divider1"><span>SAMPLE ITEM</span></div>
+
+<!-- From Uiverse.io by PriyanshuGupta28 -->
+<div class="marquee">
+<div class="marquee__inner">
+<div class="marquee__group">
+<span>SCREW DRIVER</span>
+<span>LAN TESTER</span>
+<span>DRILL SET</span>
+<span>PUNCH DOWN</span>
+<span>CRIMPING</span>
+<span>RANDOM</span>
+</div>
+
+<div class="marquee__group">
+</div>
+</div>
+</div>
+
+<!-- ================= AVAILABLE ITEMS / TOOLBOXES ================= -->
+<div class="section-divider"><span>AVAILABLE ITEMS</span></div>
+
+<!-- Search across every toolbox's items at once -->
+<div class="homeSearchWrap">
+  <div class="searchBar">
+    <input
+      type="text"
+      id="homeSearchInput"
+      class="inputField searchInput"
+      placeholder="⌕ Search all items"
+      oninput="renderHomeSearchResults()"
+    />
   </div>
+  <div id="homeSearchResults" class="homeSearchResults"></div>
+</div>
 
-  <!-- Borrow/Return: only visible when logged in (toggled via JS in updateMenuUI) -->
-  <button id="bottone1" class="hiddenForGuest" onclick="openBorrowModal()"><strong>BORROW ITEMS</strong></button>
-  <button id="bottone2" class="hiddenForGuest" onclick="openReturnModal()"><strong>RETURN ITEMS</strong></button>
+<div class="toolbox-grid">
+<div class="toolbox-card" onclick="openToolboxView(1)">
+<div class="toolbox-icon"></div>
+<p class="toolbox-name">TOOLBOX 1</p>
+<p class="toolbox-count" id="toolboxCount1">0 items</p>
+</div>
+<div class="toolbox-card" onclick="openToolboxView(2)">
+<div class="toolbox-icon"></div>
+<p class="toolbox-name">TOOLBOX 2</p>
+<p class="toolbox-count" id="toolboxCount2">0 items</p>
+</div>
+<div class="toolbox-card" onclick="openToolboxView(3)">
+<div class="toolbox-icon"></div>
+<p class="toolbox-name">TOOLBOX 3</p>
+<p class="toolbox-count" id="toolboxCount3">0 items</p>
+</div>
+<div class="toolbox-card" onclick="openToolboxView(4)">
+<div class="toolbox-icon"></div>
+<p class="toolbox-name">TOOLBOX 4</p>
+<p class="toolbox-count" id="toolboxCount4">0 items</p>
+</div>
+<div class="toolbox-card" onclick="openToolboxView(5)">
+<div class="toolbox-icon"></div>
+<p class="toolbox-name">RANDOM ITEM</p>
+<p class="toolbox-count" id="toolboxCount5">0 items</p>
+</div>
+</div>
 
-  <div class="section-divider1"><span>SAMPLE ITEM</span></div>
+<!-- TOOLBOX VIEW MODAL (reused for all 5 boxes) -->
+<div id="toolboxViewModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:440px; width:92%;">
+<span class="modal-close" onclick="closeToolboxView()">×</span>
+<h3 class="modal-title" id="toolboxViewTitle">Toolbox</h3>
 
-  <!-- From Uiverse.io by PriyanshuGupta28 -->
-  <div class="marquee">
-    <div class="marquee__inner">
-      <div class="marquee__group">
-        <span>SCREW DRIVER</span>
-        <span>LAN TESTER</span>
-        <span>DRILL SET</span>
-        <span>PUNCH DOWN</span>
-        <span>CRIMPING</span>
-        <span>RANDOM</span>
-      </div>
+<div class="searchBar">
+<input
+type="text"
+id="toolboxSearchInput"
+class="inputField searchInput"
+placeholder="⌕ Search items"
+oninput="renderToolboxItems()"
+/>
+</div>
 
-      <div class="marquee__group">
-      </div>
-    </div>
-  </div>
+<div id="toolboxItemList" class="itemListBox"></div>
+</div>
+</div>
 
-  <!-- ================= AVAILABLE ITEMS / TOOLBOXES ================= -->
-  <div class="section-divider"><span>AVAILABLE ITEMS</span></div>
+<!-- ADD ITEM MODAL -->
+<div id="addItemModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box">
+<span class="modal-close" onclick="closeAddItemModal()">×</span>
+<h3 class="modal-title">Add New Item</h3>
 
-  <div class="toolbox-grid">
-    <div class="toolbox-card" onclick="openToolboxView(1)">
-      <div class="toolbox-icon"></div>
-      <p class="toolbox-name">TOOLBOX 1</p>
-      <p class="toolbox-count" id="toolboxCount1">0 items</p>
-    </div>
-    <div class="toolbox-card" onclick="openToolboxView(2)">
-      <div class="toolbox-icon"></div>
-      <p class="toolbox-name">TOOLBOX 2</p>
-      <p class="toolbox-count" id="toolboxCount2">0 items</p>
-    </div>
-    <div class="toolbox-card" onclick="openToolboxView(3)">
-      <div class="toolbox-icon"></div>
-      <p class="toolbox-name">TOOLBOX 3</p>
-      <p class="toolbox-count" id="toolboxCount3">0 items</p>
-    </div>
-    <div class="toolbox-card" onclick="openToolboxView(4)">
-      <div class="toolbox-icon"></div>
-      <p class="toolbox-name">TOOLBOX 4</p>
-      <p class="toolbox-count" id="toolboxCount4">0 items</p>
-    </div>
-    <div class="toolbox-card" onclick="openToolboxView(5)">
-      <div class="toolbox-icon"></div>
-      <p class="toolbox-name">RANDOM ITEM</p>
-      <p class="toolbox-count" id="toolboxCount5">0 items</p>
-    </div>
-  </div>
+<p class="fieldLabel">Select Toolbox</p>
+<div class="toolboxChooser" id="toolboxChooser"></div>
 
-  <!-- TOOLBOX VIEW MODAL (reused for all 5 boxes) -->
-  <div id="toolboxViewModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:440px; width:92%;">
-      <span class="modal-close" onclick="closeToolboxView()">×</span>
-      <h3 class="modal-title" id="toolboxViewTitle">Toolbox</h3>
+<div class="inputContainer" style="margin-top:15px;">
+<input placeholder="Name of item" id="itemName" class="inputField" type="text" maxlength="60" style="padding-left:15px;" />
+</div>
 
-      <div class="searchBar">
-        <span class="searchIcon">⌕</span>
-        <input
-          type="text"
-          id="toolboxSearchInput"
-          class="inputField searchInput"
-          placeholder="Search items..."
-          oninput="renderToolboxItems()"
-        />
-      </div>
+<div class="inputContainer">
+<input placeholder="Quantity" id="itemQuantity" class="inputField" type="number" min="1" style="padding-left:15px;" />
+</div>
 
-      <div id="toolboxItemList" class="itemListBox"></div>
-    </div>
-  </div>
+<label class="fileLabel">
+Upload a picture of the item
+<input type="file" id="itemImage" accept="image/*" onchange="previewItemImage(event)" />
+</label>
+<img id="itemImagePreview" class="item-image-preview" style="display:none;" />
 
-  <!-- ADD ITEM MODAL -->
-  <div id="addItemModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-      <span class="modal-close" onclick="closeAddItemModal()">×</span>
-      <h3 class="modal-title">Add New Item</h3>
+<div class="generatedIdBox">
+<span>Item ID:</span>
+<strong id="generatedItemId"></strong>
+</div>
 
-      <p class="fieldLabel">Select Toolbox</p>
-      <div class="toolboxChooser" id="toolboxChooser"></div>
+<button id="generateQrBtn" onclick="generateItemQR()">Generate QR</button>
+<div id="qrCodeContainer"></div>
 
-      <div class="inputContainer" style="margin-top:15px;">
-        <input placeholder="Name of item" id="itemName" class="inputField" type="text" maxlength="60" style="padding-left:15px;" />
-      </div>
+<button id="saveQrBtn" onclick="saveGeneratedQr()" style="display:none;">Save QR</button>
+<button id="saveItemBtn" onclick="saveItem()" style="display:none;">Save Item</button>
 
-      <div class="inputContainer">
-        <input placeholder="Quantity" id="itemQuantity" class="inputField" type="number" min="1" style="padding-left:15px;" />
-      </div>
+<p id="itemFormError" style="color:crimson; font-size:.75em; min-height:14px; margin:8px 0 0; text-align:center;"></p>
+</div>
+</div>
 
-      <label class="fileLabel">
-        Upload a picture of the item
-        <input type="file" id="itemImage" accept="image/*" onchange="previewItemImage(event)" />
-      </label>
-      <img id="itemImagePreview" class="item-image-preview" style="display:none;" />
+<!-- DELETE ITEM MODAL -->
+<div id="deleteItemModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:440px; width:92%;">
+<span class="modal-close" onclick="closeDeleteItemModal()">×</span>
+<h3 class="modal-title">Delete Item</h3>
 
-      <div class="generatedIdBox">
-        <span>Item ID:</span>
-        <strong id="generatedItemId"></strong>
-      </div>
+<div class="searchBar">
+<span class="searchIcon">⌕</span>
+<input
+type="text"
+id="deleteSearchInput"
+class="inputField searchInput"
+placeholder="Search items..."
+oninput="renderDeleteItemList()"
+/>
+</div>
 
-      <button id="generateQrBtn" onclick="generateItemQR()">Generate QR</button>
-      <div id="qrCodeContainer"></div>
+<div id="deleteItemList" class="itemListBox"></div>
+<p id="deleteItemError" class="modalError"></p>
+</div>
+</div>
 
-      <button id="saveItemBtn" onclick="saveItem()" style="display:none;">Save Item</button>
+<!-- LOST AND FOUND MODAL -->
+<div id="lostFoundModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:460px; width:92%;">
+<span class="modal-close" onclick="closeLostFoundModal()">×</span>
+<h3 class="modal-title">Lost and Found</h3>
 
-      <p id="itemFormError" style="color:crimson; font-size:.75em; min-height:14px; margin:8px 0 0; text-align:center;"></p>
-    </div>
-  </div>
+<div class="inputContainer" style="margin-top:10px;">
+<input placeholder="Item name" id="lostItemName" class="inputField" type="text" maxlength="60" style="padding-left:15px;" />
+</div>
+<div class="inputContainer">
+<input placeholder="Description / location (optional)" id="lostDescription" class="inputField" type="text" maxlength="100" style="padding-left:15px;" />
+</div>
 
-  <!-- DELETE ITEM MODAL -->
-  <div id="deleteItemModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:440px; width:92%;">
-      <span class="modal-close" onclick="closeDeleteItemModal()">×</span>
-      <h3 class="modal-title">Delete Item</h3>
+<p class="fieldLabel">Status</p>
+<div class="toolboxChooser" id="lostStatusChooser">
+<div class="toolboxChip selected" data-status="lost" onclick="selectLostStatus('lost')">Lost</div>
+<div class="toolboxChip" data-status="found" onclick="selectLostStatus('found')">Found</div>
+</div>
 
-      <div class="searchBar">
-        <span class="searchIcon">⌕</span>
-        <input
-          type="text"
-          id="deleteSearchInput"
-          class="inputField searchInput"
-          placeholder="Search items..."
-          oninput="renderDeleteItemList()"
-        />
-      </div>
+<p id="lostFoundError" class="modalError"></p>
+<button class="modalBtn" onclick="submitLostFound()">Report Item</button>
 
-      <div id="deleteItemList" class="itemListBox"></div>
-      <p id="deleteItemError" class="modalError"></p>
-    </div>
-  </div>
+<div class="section-divider" style="margin:26px 0 6px; color:#555; text-shadow:none;"><span>REPORTED ITEMS</span></div>
+<div id="lostFoundList" class="itemListBox"></div>
+</div>
+</div>
 
-  <!-- LOST AND FOUND MODAL -->
-  <div id="lostFoundModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:460px; width:92%;">
-      <span class="modal-close" onclick="closeLostFoundModal()">×</span>
-      <h3 class="modal-title">Lost and Found</h3>
+<!-- LIST OF BORROWER MODAL -->
+<div id="borrowerListModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:540px; width:94%;">
+<span class="modal-close" onclick="closeBorrowerListModal()">×</span>
+<h3 class="modal-title">List of Borrowers</h3>
 
-      <div class="inputContainer" style="margin-top:10px;">
-        <input placeholder="Item name" id="lostItemName" class="inputField" type="text" maxlength="60" style="padding-left:15px;" />
-      </div>
-      <div class="inputContainer">
-        <input placeholder="Description / location (optional)" id="lostDescription" class="inputField" type="text" maxlength="100" style="padding-left:15px;" />
-      </div>
+<div class="searchBar">
+<span class="searchIcon">⌕</span>
+<input
+type="text"
+id="borrowerSearchInput"
+class="inputField searchInput"
+placeholder="Search borrower or item..."
+oninput="renderBorrowerList()"
+/>
+</div>
 
-      <p class="fieldLabel">Status</p>
-      <div class="toolboxChooser" id="lostStatusChooser">
-        <div class="toolboxChip selected" data-status="lost" onclick="selectLostStatus('lost')">Lost</div>
-        <div class="toolboxChip" data-status="found" onclick="selectLostStatus('found')">Found</div>
-      </div>
+<div id="borrowerListBox" class="itemListBox"></div>
+</div>
+</div>
 
-      <p id="lostFoundError" class="modalError"></p>
-      <button class="modalBtn" onclick="submitLostFound()">Report Item</button>
+<!-- BORROW RECORD INFO MODAL ("See Info") -->
+<div id="borrowInfoModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:440px; width:92%;">
+<span class="modal-close" onclick="closeBorrowInfo()">×</span>
+<h3 class="modal-title">Borrow Record Info</h3>
+<div id="borrowInfoContent" style="margin-top:15px;"></div>
+</div>
+</div>
 
-      <div class="section-divider" style="margin:26px 0 6px; color:#555; text-shadow:none;"><span>REPORTED ITEMS</span></div>
-      <div id="lostFoundList" class="itemListBox"></div>
-    </div>
-  </div>
+<!-- SEARCH ITEM BY QR MODAL -->
+<div id="searchByQrModalOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:420px; width:92%;">
+    <span class="modal-close" onclick="closeSearchByQrModal()">×</span>
+    <h3 class="modal-title">Search Item by QR</h3>
 
-  <!-- LIST OF BORROWER MODAL -->
-  <div id="borrowerListModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:540px; width:94%;">
-      <span class="modal-close" onclick="closeBorrowerListModal()">×</span>
-      <h3 class="modal-title">List of Borrowers</h3>
-
-      <div class="searchBar">
-        <span class="searchIcon">⌕</span>
-        <input
-          type="text"
-          id="borrowerSearchInput"
-          class="inputField searchInput"
-          placeholder="Search borrower or item..."
-          oninput="renderBorrowerList()"
-        />
-      </div>
-
-      <div id="borrowerListBox" class="itemListBox"></div>
-    </div>
-  </div>
-
-  <!-- BORROW RECORD INFO MODAL ("See Info") -->
-  <div id="borrowInfoModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:440px; width:92%;">
-      <span class="modal-close" onclick="closeBorrowInfo()">×</span>
-      <h3 class="modal-title">Borrow Record Info</h3>
-      <div id="borrowInfoContent" style="margin-top:15px;"></div>
-    </div>
-  </div>
-
-  <!-- INVENTORY MODAL -->
-  <div id="inventoryModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box" style="max-width:620px; width:90%;">
-      <span class="modal-close" onclick="closeInventoryModal()">×</span>
-      <h3 class="modal-title">Inventory</h3>
-      <div id="inventoryList" style="margin-top:15px;"></div>
-    </div>
-  </div>
-
-  <!-- BORROW ITEM MODAL -->
-  <div id="borrowModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-      <span class="modal-close" onclick="closeBorrowModal()">×</span>
-      <h3 class="modal-title">Borrow Item</h3>
-
-      <div id="borrowFormStep">
-        <div class="inputContainer">
-          <input placeholder="Borrower's Full Name" id="borrowerName" class="inputField" type="text" maxlength="50" style="padding-left:15px;" />
-        </div>
-        <div class="inputContainer">
-          <input placeholder="Borrower's LRN (12 digits)" id="borrowerLrn" class="inputField" type="text" inputmode="numeric" maxlength="12" style="padding-left:15px;" />
-        </div>
-        <div class="inputContainer">
-          <input placeholder="Borrower's Section" id="borrowerSection" class="inputField" type="text" maxlength="20" style="padding-left:15px;" />
-        </div>
-        <div class="inputContainer">
-          <input placeholder="Quantity" id="borrowQuantity" class="inputField" type="number" min="1" style="padding-left:15px;" />
-        </div>
-
-        <p id="borrowFormError" class="modalError"></p>
-        <button class="modalBtn" onclick="proceedToScan()">Scan and Done</button>
-      </div>
-
-      <div id="borrowScanStep" style="display:none;">
-        <p style="text-align:center; font-size:.8em; color:#555; margin-bottom:10px;">Scan the item's QR code</p>
-        <div id="borrowQrReader" style="width:100%;"></div>
-        <p id="borrowScanError" class="modalError"></p>
-        <p style="text-align:center; font-size:.8em; color:#555; margin-top:12px;">
-          If camera doesn't work, upload a QR image:
-        </p>
-        <input type="file" accept="image/*" onchange="scanQrFromImageFile(event, 'borrow')" />
-      </div>
-    </div>
-  </div>
-
-  <!-- RETURN ITEM MODAL -->
-  <div id="returnModalOverlay" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-      <span class="modal-close" onclick="closeReturnModal()">×</span>
-      <h3 class="modal-title">Return Item</h3>
-
-      <p style="text-align:center; font-size:.8em; color:#555; margin-bottom:10px;">Scan the item's QR code</p>
-      <div id="returnQrReader" style="width:100%;"></div>
-      <p id="returnScanError" class="modalError"></p>
+    <div id="searchByQrScanStep">
+      <p style="text-align:center; font-size:.8em; color:#555; margin-bottom:10px; margin-top:15px;">Scan an item's QR code</p>
+      <div id="searchByQrReader" style="width:100%;"></div>
+      <p id="searchByQrError" class="modalError"></p>
       <p style="text-align:center; font-size:.8em; color:#555; margin-top:12px;">
         If camera doesn't work, upload a QR image:
       </p>
-      <input type="file" accept="image/*" onchange="scanQrFromImageFile(event, 'return')" />
+      <input type="file" accept="image/*" onchange="scanQrFromImageFile(event, 'search')" />
+    </div>
+
+    <div id="searchByQrResultStep" style="display:none; margin-top:10px;">
+      <div id="searchByQrResultContent"></div>
+      <button class="modalBtn" onclick="restartSearchByQrScan()">Scan Again?</button>
     </div>
   </div>
+</div>
 
-  <!-- Libraries -->
-  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<!-- INVENTORY MODAL -->
+<div id="inventoryModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:620px; width:90%;">
+<span class="modal-close" onclick="closeInventoryModal()">×</span>
+<h3 class="modal-title">Inventory</h3>
+<div id="inventoryList" style="margin-top:15px;"></div>
+</div>
+</div>
 
-  <!-- Your JS -->
-  <script src="script.js"></script>
+<!-- BORROW ITEM MODAL -->
+<div id="borrowModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box">
+<span class="modal-close" onclick="closeBorrowModal()">×</span>
+<h3 class="modal-title">Borrow Item</h3>
+
+<div id="borrowFormStep">
+<div class="inputContainer">
+<input placeholder="Borrower's Full Name" id="borrowerName" class="inputField" type="text" maxlength="50" style="padding-left:15px;" />
+</div>
+<div class="inputContainer">
+<input placeholder="Borrower's LRN (12 digits)" id="borrowerLrn" class="inputField" type="text" inputmode="numeric" maxlength="12" style="padding-left:15px;" />
+</div>
+<div class="inputContainer">
+<input placeholder="Borrower's Section" id="borrowerSection" class="inputField" type="text" maxlength="20" style="padding-left:15px;" />
+</div>
+<div class="inputContainer">
+<input placeholder="Quantity" id="borrowQuantity" class="inputField" type="number" min="1" style="padding-left:15px;" />
+</div>
+
+<p id="borrowFormError" class="modalError"></p>
+<button class="modalBtn" onclick="proceedToScan()">Scan and Done</button>
+</div>
+
+<div id="borrowScanStep" style="display:none;">
+<p style="text-align:center; font-size:.8em; color:#555; margin-bottom:10px;">Scan the item's QR code</p>
+<div id="borrowQrReader" style="width:100%;"></div>
+<p id="borrowScanError" class="modalError"></p>
+<p style="text-align:center; font-size:.8em; color:#555; margin-top:12px;">
+If camera doesn't work, upload a QR image:
+</p>
+<input type="file" accept="image/*" onchange="scanQrFromImageFile(event, 'borrow')" />
+</div>
+
+<div id="borrowResultStep" style="display:none;">
+  <div id="borrowResultContent"></div>
+  <button class="modalBtn" onclick="restartBorrowScan()">Scan Again?</button>
+</div>
+</div>
+</div>
+
+<!-- RETURN ITEM MODAL -->
+<div id="returnModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box">
+<span class="modal-close" onclick="closeReturnModal()">×</span>
+<h3 class="modal-title">Return Item</h3>
+
+<div id="returnScanStep">
+<p style="text-align:center; font-size:.8em; color:#555; margin-bottom:10px; margin-top:15px;">Scan the item's QR code</p>
+<div id="returnQrReader" style="width:100%;"></div>
+<p id="returnScanError" class="modalError"></p>
+<p style="text-align:center; font-size:.8em; color:#555; margin-top:12px;">
+If camera doesn't work, upload a QR image:
+</p>
+<input type="file" accept="image/*" onchange="scanQrFromImageFile(event, 'return')" />
+</div>
+
+<div id="returnResultStep" style="display:none; margin-top:10px;">
+  <div id="returnResultContent"></div>
+  <button class="modalBtn" onclick="restartReturnScan()">Scan Again?</button>
+</div>
+</div>
+</div>
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+<!-- Your JS -->
+<script src="script.js?v=4"></script>
 </body>
 </html>
