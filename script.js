@@ -6,34 +6,116 @@
 // - Fallback to Upload Image
 // ===============================
 
-// ---------- localStorage keys ----------
-const LS = {
-  session: "trackit_session",
-  users: "trackit_users",
-  items: "trackit_items",
-  borrows: "trackit_borrows",
+// ---------- localStorage keys (frozen — tamper-proof) ----------
+const LS = Object.freeze({
+  session:   "trackit_session",
+  users:     "trackit_users",
+  items:     "trackit_items",
+  borrows:   "trackit_borrows",
   lostFound: "trackit_lostfound"
-};
+});
 
-// ---------- 5 fixed toolbox categories ----------
-// Rename these anytime - the "name" field is all that shows in item detail views.
-const TOOLBOXES = [
-  { id: 1, name: "Toolbox 1", icon: "" },
-  { id: 2, name: "Toolbox 2", icon: "" },
-  { id: 3, name: "Toolbox 3", icon: "" },
-  { id: 4, name: "Toolbox 4", icon: "" },
-  { id: 5, name: "RANDOM ITEMs", icon: "" },
-];
+// ---------- 5 fixed toolbox categories (frozen) ----------
+const TOOLBOXES = Object.freeze([
+  Object.freeze({ id: 1, name: "Toolbox 1",    icon: "" }),
+  Object.freeze({ id: 2, name: "Toolbox 2",    icon: "" }),
+  Object.freeze({ id: 3, name: "Toolbox 3",    icon: "" }),
+  Object.freeze({ id: 4, name: "Toolbox 4",    icon: "" }),
+  Object.freeze({ id: 5, name: "RANDOM ITEMs", icon: "" }),
+]);
 
 function toolboxName(id) {
   const t = TOOLBOXES.find(t => t.id === Number(id));
   return t ? t.name : "Unassigned";
 }
 
-// ---------- helpers ----------
-function readLS(key, fallback) {
+// ============================================================
+// SECURITY — Rate limiting (brute-force protection)
+// ============================================================
+const RL_MAX_ATTEMPTS  = 5;
+const RL_LOCKOUT_MS    = 15 * 60 * 1000; // 15 minutes
+const RL_KEY_PREFIX    = "trackit_rl_";
+
+function getRateLimitKey(lrn) {
+  // Only allow digit strings so we never build arbitrary LS keys
+  return RL_KEY_PREFIX + String(lrn).replace(/[^0-9]/g, "");
+}
+
+function checkRateLimit(lrn) {
+  const key  = getRateLimitKey(lrn);
+  const data = readLS(key, { attempts: 0, lockedUntil: 0 });
+  if (Date.now() < (data.lockedUntil || 0)) {
+    const mins = Math.ceil((data.lockedUntil - Date.now()) / 60000);
+    return { locked: true, mins };
+  }
+  return { locked: false };
+}
+
+function recordFailedAttempt(lrn) {
+  const key  = getRateLimitKey(lrn);
+  const data = readLS(key, { attempts: 0, lockedUntil: 0 });
+  data.attempts = (data.attempts || 0) + 1;
+  if (data.attempts >= RL_MAX_ATTEMPTS) {
+    data.lockedUntil = Date.now() + RL_LOCKOUT_MS;
+    data.attempts    = 0;
+  }
+  writeLS(key, data);
+}
+
+function clearRateLimit(lrn) {
+  try { localStorage.removeItem(getRateLimitKey(lrn)); } catch {}
+}
+
+// ============================================================
+// SECURITY — Input validators
+// ============================================================
+const VALID_ITEM_ID_RE   = /^ITEM-[0-9]{8}-[0-9]{6}-[0-9]{3}$/;
+const VALID_BORROW_ID_RE = /^BORROW-[0-9]+$/;
+const VALID_LF_ID_RE     = /^LF-[0-9]+$/;
+
+function isValidItemIdFormat(id)   { return typeof id === "string" && VALID_ITEM_ID_RE.test(id); }
+function isValidBorrowIdFormat(id) { return typeof id === "string" && VALID_BORROW_ID_RE.test(id); }
+
+// Whitelist-only QR payload parser — accepts ONLY { id: string }
+function safeParseQr(text) {
   try {
-    const v = JSON.parse(localStorage.getItem(key));
+    if (typeof text !== "string" || text.length > 256) return null;
+    const obj = JSON.parse(text);
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+    // Prototype-pollution guard
+    if (Object.prototype.hasOwnProperty.call(obj, "__proto__")   ||
+        Object.prototype.hasOwnProperty.call(obj, "constructor") ||
+        Object.prototype.hasOwnProperty.call(obj, "prototype"))  return null;
+    // Whitelist: only allow `id` key
+    if (typeof obj.id !== "string" || !isValidItemIdFormat(obj.id)) return null;
+    return { id: obj.id };
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================
+// SECURITY — Safe localStorage helpers
+// ============================================================
+const ALLOWED_LS_KEYS = new Set(Object.values(LS));
+// Also allow rate-limit keys dynamically via prefix check
+function isAllowedKey(key) {
+  return ALLOWED_LS_KEYS.has(key) || key.startsWith(RL_KEY_PREFIX);
+}
+
+function readLS(key, fallback) {
+  if (!isAllowedKey(key)) return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    if (raw.length > 5_000_000) return fallback; // 5 MB sanity cap
+    const v = JSON.parse(raw);
+    // Prototype-pollution guard on top-level value
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      if (Object.prototype.hasOwnProperty.call(v, "__proto__")   ||
+          Object.prototype.hasOwnProperty.call(v, "constructor") ||
+          Object.prototype.hasOwnProperty.call(v, "prototype"))  return fallback;
+    }
     if (v === null || v === undefined) return fallback;
     if (Array.isArray(fallback) && !Array.isArray(v)) return fallback;
     return v;
@@ -41,62 +123,145 @@ function readLS(key, fallback) {
     return fallback;
   }
 }
+
 function writeLS(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  if (!isAllowedKey(key)) return;
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // Storage quota or security error — fail silently
+  }
 }
-function nowISO() {
-  return new Date().toISOString();
+
+// ============================================================
+// SECURITY — localStorage schema validators
+// Reject tampered/malformed records before they touch the UI.
+// ============================================================
+function isValidUser(u) {
+  return u && typeof u === "object" &&
+    typeof u.fullName === "string" && isValidName(u.fullName) &&
+    typeof u.lrn      === "string" && isValidLRN(u.lrn) &&
+    typeof u.password === "string" && isValidPassword(u.password) &&
+    typeof u.section  === "string";
 }
+
+function isValidItem(i) {
+  return i && typeof i === "object" &&
+    typeof i.id       === "string" && isValidItemIdFormat(i.id) &&
+    typeof i.name     === "string" && i.name.length > 0 && i.name.length <= 60 &&
+    typeof i.quantity === "number" && i.quantity >= 0 &&
+    typeof i.toolbox  === "number" && [1,2,3,4,5].includes(i.toolbox);
+}
+
+function isValidBorrow(b) {
+  return b && typeof b === "object" &&
+    typeof b.borrowId === "string" && isValidBorrowIdFormat(b.borrowId) &&
+    typeof b.itemId   === "string" && isValidItemIdFormat(b.itemId) &&
+    typeof b.itemName === "string" &&
+    typeof b.quantity === "number" && b.quantity > 0;
+}
+
+function safeReadUsers()   { return readLS(LS.users,   []).filter(isValidUser); }
+function safeReadItems()   { return readLS(LS.items,   []).filter(isValidItem); }
+function safeReadBorrows() { return readLS(LS.borrows, []).filter(isValidBorrow); }
+function safeReadLF()      { return readLS(LS.lostFound, []); }
+
+// ---------- helpers ----------
+function nowISO() { return new Date().toISOString(); }
+
 function escapeHtml(str) {
   return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+    .replaceAll("&",  "&amp;")
+    .replaceAll("<",  "&lt;")
+    .replaceAll(">",  "&gt;")
+    .replaceAll('"',  "&quot;")
+    .replaceAll("'",  "&#039;");
 }
+
 function requireLogin() {
   const session = readLS(LS.session, { loggedIn: false });
-  if (!session.loggedIn) {
-    alert("Please login first.");
-    return false;
-  }
+  if (!session.loggedIn) { alert("Please login first."); return false; }
   return true;
 }
+
 function closeMenuPanel() {
   const menuToggle = document.getElementById("menuToggle");
   if (menuToggle) menuToggle.checked = true;
 }
 
 // ---------- generic modal open/close ----------
-// Locks page scroll using the "position: fixed" technique applied directly
-// via JS inline styles (not a CSS class) so it works even on iOS Safari,
-// where `overflow:hidden` alone often still lets the background scroll,
-// and so it can't silently fail just because a cached stylesheet is stale.
-// The white/blur backdrop itself is CSS (.modal-overlay) - purely visual,
-// not required for the scroll-lock to function.
 let savedScrollY = 0;
 
 function showModal(overlayId) {
   document.getElementById(overlayId).style.display = "flex";
-
   savedScrollY = window.scrollY || window.pageYOffset || 0;
   document.body.style.position = "fixed";
-  document.body.style.top = `-${savedScrollY}px`;
-  document.body.style.left = "0";
-  document.body.style.right = "0";
-  document.body.style.width = "100%";
+  document.body.style.top      = `-${savedScrollY}px`;
+  document.body.style.left     = "0";
+  document.body.style.right    = "0";
+  document.body.style.width    = "100%";
 }
 
 function hideModal(overlayId) {
   document.getElementById(overlayId).style.display = "none";
-
   document.body.style.position = "";
-  document.body.style.top = "";
-  document.body.style.left = "";
-  document.body.style.right = "";
-  document.body.style.width = "";
+  document.body.style.top      = "";
+  document.body.style.left     = "";
+  document.body.style.right    = "";
+  document.body.style.width    = "";
   window.scrollTo(0, savedScrollY);
+}
+let audioCtx = null;
+
+function playBeep() {
+    try {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+
+        // Main beep
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = "square";       // More like a barcode scanner
+        osc.frequency.setValueAtTime(2200, now);
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.06);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.06);
+
+        // Optional second beep (cashier style)
+        setTimeout(() => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+
+            osc2.type = "square";
+            osc2.frequency.setValueAtTime(1800, audioCtx.currentTime);
+
+            gain2.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.04);
+
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.04);
+        }, 70);
+
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 // ===================================================
@@ -104,44 +269,45 @@ function hideModal(overlayId) {
 // ===================================================
 let authMode = "login";
 
-const fullNameInput = document.getElementById("fullName");
-const lrnInput = document.getElementById("lrn");
-const passwordInput = document.getElementById("password");
-const sectionInput = document.getElementById("section");
-const sectionRow = document.getElementById("sectionRow");
-const authError = document.getElementById("authError");
-const formHeading = document.getElementById("formHeading");
-const signupPrompt = document.getElementById("signupPrompt");
+const fullNameInput  = document.getElementById("fullName");
+const lrnInput       = document.getElementById("lrn");
+const passwordInput  = document.getElementById("password");
+const sectionInput   = document.getElementById("section");
+const sectionRow     = document.getElementById("sectionRow");
+const authError      = document.getElementById("authError");
+const formHeading    = document.getElementById("formHeading");
+const signupPrompt   = document.getElementById("signupPrompt");
 const toggleModeLink = document.getElementById("toggleModeLink");
 
-function sanitizeName(raw) { return raw.replace(/[^A-Za-z ]/g, "").slice(0, 50).trim(); }
-function sanitizeLRN(raw) { return raw.replace(/[^0-9]/g, "").slice(0, 12); }
+function sanitizeName(raw)    { return raw.replace(/[^A-Za-z ]/g, "").slice(0, 50).trim(); }
+function sanitizeLRN(raw)     { return raw.replace(/[^0-9]/g, "").slice(0, 12); }
 function sanitizeSection(raw) { return raw.replace(/[^A-Za-z0-9\- ]/g, "").slice(0, 20).trim(); }
+function sanitizeText(raw, max) { return String(raw).replace(/[<>"'`;]/g, "").slice(0, max).trim(); }
 
-function isValidName(v) { return /^[A-Za-z ]{2,50}$/.test(v); }
-function isValidLRN(v) { return /^[0-9]{12}$/.test(v); }
-function isValidPassword(v) { return v.length >= 8 && v.length <= 64; }
-function isValidSection(v) { return /^[A-Za-z0-9\- ]{2,20}$/.test(v); }
+function isValidName(v)     { return /^[A-Za-z ]{2,50}$/.test(v); }
+function isValidLRN(v)      { return /^[0-9]{12}$/.test(v); }
+function isValidPassword(v) { return typeof v === "string" && v.length >= 8 && v.length <= 64; }
+function isValidSection(v)  { return /^[A-Za-z0-9\- ]{2,20}$/.test(v); }
 
-toggleModeLink?.addEventListener("click", function (e) {
+toggleModeLink?.addEventListener("click", function(e) {
   e.preventDefault();
   authMode = authMode === "login" ? "register" : "login";
   updateFormLabels();
 });
 
-document.getElementById("backToChoiceLink")?.addEventListener("click", function (e) {
+document.getElementById("backToChoiceLink")?.addEventListener("click", function(e) {
   e.preventDefault();
   showAuthChoice();
 });
 
 function updateFormLabels() {
   if (authMode === "login") {
-    formHeading.textContent = "Login";
+    formHeading.textContent  = "Login";
     signupPrompt.textContent = "Don't have any account?";
     toggleModeLink.textContent = "Sign up";
     sectionRow.style.display = "none";
   } else {
-    formHeading.textContent = "Register";
+    formHeading.textContent  = "Register";
     signupPrompt.textContent = "Already have an account?";
     toggleModeLink.textContent = "Login";
     sectionRow.style.display = "flex";
@@ -151,43 +317,38 @@ function updateFormLabels() {
 
 function showAuthForm(mode) {
   authMode = mode;
-  document.getElementById("authChoice").style.display = "none";
+  document.getElementById("authChoice").style.display      = "none";
   document.getElementById("authFormWrapper").style.display = "block";
   updateFormLabels();
 }
 
 function showAuthChoice() {
-  document.getElementById("authChoice").style.display = "block";
+  document.getElementById("authChoice").style.display      = "block";
   document.getElementById("authFormWrapper").style.display = "none";
   authError.textContent = "";
 }
 
 function togglePasswordVisibility() {
-  const passwordField = document.getElementById("password");
+  const f    = document.getElementById("password");
   const icon = document.getElementById("togglePasswordIcon");
-  if (!passwordField) return;
-  if (passwordField.type === "password") {
-    passwordField.type = "text";
-    if (icon) icon.style.opacity = "1";
-  } else {
-    passwordField.type = "password";
-    if (icon) icon.style.opacity = "0.6";
-  }
+  if (!f) return;
+  f.type = f.type === "password" ? "text" : "password";
+  if (icon) icon.style.opacity = f.type === "text" ? "1" : "0.6";
 }
 
 // ===================================================
-// REGISTER / LOGIN — localStorage
+// REGISTER / LOGIN — with rate limiting + schema checks
 // ===================================================
 async function handleAuthSubmit(e) {
   e.preventDefault();
   authError.textContent = "";
 
   const rawName = fullNameInput.value.trim();
-  const rawLRN = lrnInput.value.trim();
+  const rawLRN  = lrnInput.value.trim();
   const password = passwordInput.value;
 
   const cleanName = sanitizeName(rawName);
-  const cleanLRN = sanitizeLRN(rawLRN);
+  const cleanLRN  = sanitizeLRN(rawLRN);
 
   if (cleanName !== rawName || !isValidName(cleanName)) {
     authError.textContent = "Name must contain letters and spaces only (2–50).";
@@ -202,7 +363,14 @@ async function handleAuthSubmit(e) {
     return;
   }
 
-  const users = readLS(LS.users, []);
+  // Rate-limit check (applies to both login & register attempts)
+  const rl = checkRateLimit(cleanLRN);
+  if (rl.locked) {
+    authError.textContent = `Too many attempts. Try again in ${rl.mins} minute(s).`;
+    return;
+  }
+
+  const users = safeReadUsers();
 
   if (authMode === "register") {
     const sectionClean = sanitizeSection(sectionInput.value.trim());
@@ -210,37 +378,36 @@ async function handleAuthSubmit(e) {
       authError.textContent = "Section must be 2–20 chars (letters/numbers/-/space).";
       return;
     }
-
-    const exists = users.some(u => u.lrn === cleanLRN);
-    if (exists) {
+    if (users.some(u => u.lrn === cleanLRN)) {
       authError.textContent = "LRN already registered. Please login.";
       return;
     }
-
     users.push({ fullName: cleanName, lrn: cleanLRN, password, section: sectionClean });
     writeLS(LS.users, users);
-
     writeLS(LS.session, { loggedIn: true, fullName: cleanName, lrn: cleanLRN });
+    clearRateLimit(cleanLRN);
     updateMenuUI();
   } else {
     const user = users.find(u => u.lrn === cleanLRN);
     if (!user || user.password !== password) {
-      authError.textContent = "Invalid LRN or password.";
+      recordFailedAttempt(cleanLRN);
+      // Generic message — don't reveal which field is wrong
+      authError.textContent = "Invalid credentials.";
       return;
     }
-
+    clearRateLimit(cleanLRN);
     writeLS(LS.session, { loggedIn: true, fullName: user.fullName, lrn: user.lrn });
     updateMenuUI();
   }
 
   fullNameInput.value = "";
-  lrnInput.value = "";
+  lrnInput.value      = "";
   passwordInput.value = "";
   if (sectionInput) sectionInput.value = "";
 }
 
 // ===================================================
-// LOGOUT (now with confirmation)
+// LOGOUT
 // ===================================================
 async function logout() {
   if (!confirm("Are you sure you want to logout?")) return;
@@ -253,21 +420,17 @@ async function logout() {
 // MENU UI
 // ===================================================
 function updateMenuUI() {
-  const session = readLS(LS.session, { loggedIn: false });
+  const session  = readLS(LS.session, { loggedIn: false });
   const loggedIn = !!session.loggedIn;
-  const fullName = session.fullName || "Guest";
-  const lrn = session.lrn || "";
+  const fullName = typeof session.fullName === "string" ? session.fullName : "Guest";
+  const lrn      = typeof session.lrn      === "string" ? session.lrn      : "";
 
   document.getElementById("usrName").textContent = fullName;
-  document.getElementById("usrLrn").textContent = lrn;
+  document.getElementById("usrLrn").textContent  = lrn;
 
-  document.getElementById("authButtons").style.display = loggedIn ? "none" : "block";
+  document.getElementById("authButtons").style.display    = loggedIn ? "none"  : "block";
   document.getElementById("accountButtons").style.display = loggedIn ? "block" : "none";
 
-  // Borrow/Return only visible to logged-in accounts.
-  // Set directly via inline style (not just a CSS class) so this can't be
-  // silently defeated by a stale/cached style.css - inline styles always
-  // win regardless of what stylesheet the browser currently has loaded.
   const bottone1 = document.getElementById("bottone1");
   const bottone2 = document.getElementById("bottone2");
   if (bottone1) bottone1.style.display = loggedIn ? "" : "none";
@@ -277,26 +440,64 @@ function updateMenuUI() {
 }
 
 // ===================================================
-// TOOLBOX GRID (home page)
+// TOOLBOX GRID
 // ===================================================
 function updateToolboxCounts() {
-  const items = readLS(LS.items, []);
+  const items = safeReadItems();
   TOOLBOXES.forEach(t => {
     const count = items.filter(i => Number(i.toolbox) === t.id).length;
-    const el = document.getElementById(`toolboxCount${t.id}`);
+    const el    = document.getElementById(`toolboxCount${t.id}`);
     if (el) el.textContent = `${count} item${count === 1 ? "" : "s"}`;
   });
 }
 
 // ===================================================
-// TOOLBOX VIEW MODAL (browse items inside one toolbox)
+// HOME SEARCH
+// ===================================================
+function renderHomeSearchResults() {
+  const input     = document.getElementById("homeSearchInput");
+  const container = document.getElementById("homeSearchResults");
+  const term      = input.value.trim().toLowerCase().slice(0, 100);
+
+  if (!term) { container.innerHTML = ""; return; }
+
+  const items = safeReadItems()
+    .filter(i => i.name.toLowerCase().includes(term))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 8);
+
+  if (!items.length) {
+    container.innerHTML = `<p class="emptyMsg">No matching items.</p>`;
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <div class="itemRow homeSearchRow" data-toolbox="${item.toolbox}">
+      ${item.imageDataUrl ? `<img src="${item.imageDataUrl}" class="itemThumb">` : `<div class="itemThumb"></div>`}
+      <div class="itemInfo">
+        <p class="name">${escapeHtml(item.name)}</p>
+        <p class="meta">${escapeHtml(toolboxName(item.toolbox))} • Qty: ${item.quantity}</p>
+      </div>
+    </div>
+  `).join("");
+
+  // Attach click via event delegation — avoids inline onclick with untrusted data
+  container.querySelectorAll(".homeSearchRow").forEach(row => {
+    row.addEventListener("click", () => openToolboxView(Number(row.dataset.toolbox)));
+  });
+}
+
+// ===================================================
+// TOOLBOX VIEW MODAL
 // ===================================================
 let currentToolboxViewId = null;
 
 function openToolboxView(id) {
   currentToolboxViewId = id;
   document.getElementById("toolboxViewTitle").textContent = toolboxName(id);
-  document.getElementById("toolboxSearchInput").value = "";
+  document.getElementById("toolboxSearchInput").value     = "";
+  document.getElementById("homeSearchInput").value        = "";
+  document.getElementById("homeSearchResults").innerHTML  = "";
   renderToolboxItems();
   showModal("toolboxViewModalOverlay");
 }
@@ -308,9 +509,9 @@ function closeToolboxView() {
 
 function renderToolboxItems() {
   const container = document.getElementById("toolboxItemList");
-  const search = document.getElementById("toolboxSearchInput").value.trim().toLowerCase();
+  const search    = document.getElementById("toolboxSearchInput").value.trim().toLowerCase().slice(0, 100);
 
-  const items = readLS(LS.items, [])
+  const items = safeReadItems()
     .filter(i => Number(i.toolbox) === currentToolboxViewId)
     .filter(i => i.name.toLowerCase().includes(search))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -338,19 +539,22 @@ function renderToolboxItems() {
 }
 
 // ===================================================
-// ADD ITEM MODAL — localStorage
+// ADD ITEM MODAL
 // ===================================================
-let currentItemId = null;
+let currentItemId       = null;
 let addItemImageDataUrl = null;
-let selectedToolboxId = null;
+let selectedToolboxId   = null;
 
 function renderToolboxChooser() {
   const wrap = document.getElementById("toolboxChooser");
   wrap.innerHTML = TOOLBOXES.map(t => `
-    <div class="toolboxChip${selectedToolboxId === t.id ? " selected" : ""}" onclick="selectToolbox(${t.id})">
+    <div class="toolboxChip${selectedToolboxId === t.id ? " selected" : ""}" data-id="${t.id}">
       ${escapeHtml(t.name)}
     </div>
   `).join("");
+  wrap.querySelectorAll(".toolboxChip").forEach(chip => {
+    chip.addEventListener("click", () => selectToolbox(Number(chip.dataset.id)));
+  });
 }
 
 function selectToolbox(id) {
@@ -361,15 +565,16 @@ function selectToolbox(id) {
 function openAddItemModal() {
   if (!requireLogin()) return;
 
-  document.getElementById("itemName").value = "";
-  document.getElementById("itemQuantity").value = "";
-  document.getElementById("itemImage").value = "";
-  document.getElementById("itemImagePreview").style.display = "none";
-  document.getElementById("qrCodeContainer").innerHTML = "";
-  document.getElementById("saveItemBtn").style.display = "none";
-  document.getElementById("itemFormError").textContent = "";
+  document.getElementById("itemName").value                  = "";
+  document.getElementById("itemQuantity").value              = "";
+  document.getElementById("itemImage").value                 = "";
+  document.getElementById("itemImagePreview").style.display  = "none";
+  document.getElementById("qrCodeContainer").innerHTML       = "";
+  document.getElementById("saveQrBtn").style.display         = "none";
+  document.getElementById("saveItemBtn").style.display       = "none";
+  document.getElementById("itemFormError").textContent       = "";
 
-  selectedToolboxId = null;
+  selectedToolboxId   = null;
   renderToolboxChooser();
 
   currentItemId = generateItemId();
@@ -385,69 +590,77 @@ function closeAddItemModal() {
 }
 
 function generateItemId() {
-  const now = new Date();
-  const datePart =
-    now.getFullYear().toString() +
-    String(now.getMonth() + 1).padStart(2, "0") +
-    String(now.getDate()).padStart(2, "0");
-  const timePart =
-    String(now.getHours()).padStart(2, "0") +
-    String(now.getMinutes()).padStart(2, "0") +
-    String(now.getSeconds()).padStart(2, "0");
-  const randomPart = Math.floor(100 + Math.random() * 900);
-  return `ITEM-${datePart}-${timePart}-${randomPart}`;
+  const now       = new Date();
+  const datePart  = now.getFullYear().toString() +
+                    String(now.getMonth() + 1).padStart(2, "0") +
+                    String(now.getDate()).padStart(2, "0");
+  const timePart  = String(now.getHours()).padStart(2, "0") +
+                    String(now.getMinutes()).padStart(2, "0") +
+                    String(now.getSeconds()).padStart(2, "0");
+  const rand      = Math.floor(100 + Math.random() * 900);
+  return `ITEM-${datePart}-${timePart}-${rand}`;
 }
 
 function previewItemImage(event) {
   const file = event.target.files[0];
   if (!file) return;
-
+  // Only allow image/* types
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload an image file.");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Image must be under 5 MB.");
+    return;
+  }
   const reader = new FileReader();
-  reader.onload = function (e) {
+  reader.onload = function(e) {
     addItemImageDataUrl = e.target.result;
-    const preview = document.getElementById("itemImagePreview");
-    preview.src = addItemImageDataUrl;
+    const preview   = document.getElementById("itemImagePreview");
+    preview.src     = addItemImageDataUrl;
     preview.style.display = "block";
   };
   reader.readAsDataURL(file);
 }
 
 function generateItemQR() {
-  const name = document.getElementById("itemName").value.trim();
-  const quantity = document.getElementById("itemQuantity").value.trim();
-  const errorEl = document.getElementById("itemFormError");
+  const name      = sanitizeText(document.getElementById("itemName").value.trim(), 60);
+  const quantity  = parseInt(document.getElementById("itemQuantity").value.trim(), 10);
+  const errorEl   = document.getElementById("itemFormError");
   errorEl.textContent = "";
 
-  if (!selectedToolboxId) return (errorEl.textContent = "Please select a toolbox first.");
-  if (!name) return (errorEl.textContent = "Please enter the item name first.");
-  if (!quantity || Number(quantity) <= 0) return (errorEl.textContent = "Please enter a valid quantity.");
+  if (!selectedToolboxId)          return (errorEl.textContent = "Please select a toolbox first.");
+  if (!name)                       return (errorEl.textContent = "Please enter the item name first.");
+  if (!quantity || quantity <= 0)  return (errorEl.textContent = "Please enter a valid quantity.");
 
-  const qrData = JSON.stringify({ id: currentItemId, name });
+  // QR encodes ONLY the id — name never goes into the QR payload
+  const qrData     = JSON.stringify({ id: currentItemId });
   const qrContainer = document.getElementById("qrCodeContainer");
   qrContainer.innerHTML = "";
   new QRCode(qrContainer, { text: qrData, width: 150, height: 150 });
 
+  document.getElementById("saveQrBtn").style.display  = "block";
   document.getElementById("saveItemBtn").style.display = "block";
 }
 
 async function saveItem() {
-  const name = document.getElementById("itemName").value.trim();
-  const quantity = Number(document.getElementById("itemQuantity").value.trim());
-  const errorEl = document.getElementById("itemFormError");
+  const name     = sanitizeText(document.getElementById("itemName").value.trim(), 60);
+  const quantity = parseInt(document.getElementById("itemQuantity").value.trim(), 10);
+  const errorEl  = document.getElementById("itemFormError");
   errorEl.textContent = "";
 
-  if (!selectedToolboxId) return (errorEl.textContent = "Please select a toolbox.");
-  if (!name) return (errorEl.textContent = "Item name is required.");
+  if (!selectedToolboxId)         return (errorEl.textContent = "Please select a toolbox.");
+  if (!name)                      return (errorEl.textContent = "Item name is required.");
   if (!quantity || quantity <= 0) return (errorEl.textContent = "Quantity must be at least 1.");
 
-  const items = readLS(LS.items, []);
+  const items = safeReadItems();
   items.push({
-    id: currentItemId,
+    id:           currentItemId,
     name,
     quantity,
-    toolbox: selectedToolboxId,
+    toolbox:      selectedToolboxId,
     imageDataUrl: addItemImageDataUrl || null,
-    dateAdded: nowISO()
+    dateAdded:    nowISO()
   });
   writeLS(LS.items, items);
 
@@ -456,26 +669,145 @@ async function saveItem() {
 }
 
 // ===================================================
+// QR LABEL DOWNLOAD — ID only, QR maximized
+// 3 cm × 4 cm at 300 DPI.
+// No name. QR fills almost the full width. Only the
+// item ID printed below in small monospace text.
+// ===================================================
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "", lines = [];
+  for (const word of words) {
+    const test = line + word + " ";
+    if (ctx.measureText(test).width > maxWidth && line !== "") {
+      lines.push(line.trim());
+      line = word + " ";
+    } else {
+      line = test;
+    }
+  }
+  lines.push(line.trim());
+  lines.slice(0, 2).forEach((l, idx) => ctx.fillText(l, x, y + idx * lineHeight));
+}
+
+/**
+ * Draws the QR label onto a canvas and triggers a download.
+ * ID only — no name. QR is maximized to fill the label.
+ */
+function renderQrLabelCanvas(container, itemId, callback) {
+  const source = container.querySelector("canvas") || container.querySelector("img");
+  if (!source) { alert("Generate the QR code first."); return; }
+
+  const DPI       = 300;
+  const CM_TO_PX  = DPI / 2.54;
+  const labelW    = Math.round(3 * CM_TO_PX); // ~354 px
+  const labelH    = Math.round(4 * CM_TO_PX); // ~472 px
+
+  const canvas = document.createElement("canvas");
+  canvas.width  = labelW;
+  canvas.height = labelH;
+  const ctx = canvas.getContext("2d");
+
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, labelW, labelH);
+
+  // Margins — tiny, to maximise QR size
+  const margin  = 6;
+  const idAreaH = 28; // reserved at the bottom for the ID text
+  const qrSize  = labelW - margin * 2;
+  const qrY     = margin;
+
+  ctx.imageSmoothingEnabled = false;
+
+  const finish = () => {
+    // ID text — centred, monospace, small
+    ctx.textAlign   = "center";
+    ctx.fillStyle   = "#222222";
+    ctx.font        = `bold 16px monospace`;
+    ctx.fillText(itemId, labelW / 2, qrY + qrSize + idAreaH / 2 + 5);
+    callback(canvas);
+  };
+
+  if (source.tagName === "CANVAS") {
+    ctx.drawImage(source, margin, qrY, qrSize, qrSize);
+    finish();
+  } else {
+    const img = new Image();
+    img.onload = () => { ctx.drawImage(img, margin, qrY, qrSize, qrSize); finish(); };
+    img.src    = source.src;
+  }
+}
+
+function downloadQrLabel(containerId, itemId) {
+  const container = document.getElementById(containerId);
+  renderQrLabelCanvas(container, itemId, (canvas) => {
+    const link      = document.createElement("a");
+    link.download   = `${itemId}.png`;
+    link.href       = canvas.toDataURL("image/png");
+    link.click();
+  });
+}
+
+/** Called by the "Save QR" button inside Add Item modal */
+function saveGeneratedQr() {
+  downloadQrLabel("qrCodeContainer", currentItemId);
+}
+
+/**
+ * Called by the "Download QR" button in Inventory.
+ * Generates the QR in memory (no modal) then downloads immediately.
+ */
+function downloadItemQr(itemId) {
+  if (!isValidItemIdFormat(itemId)) return;
+
+  const items = safeReadItems();
+  const item  = items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // Off-screen temp container
+  const tempDiv = document.createElement("div");
+  tempDiv.style.cssText = "position:absolute;left:-9999px;top:-9999px;pointer-events:none;";
+  document.body.appendChild(tempDiv);
+
+  new QRCode(tempDiv, {
+    // QR payload: ID only
+    text:   JSON.stringify({ id: item.id }),
+    width:  200,
+    height: 200
+  });
+
+  // Small delay for QRCode lib to render the canvas
+  setTimeout(() => {
+    renderQrLabelCanvas(tempDiv, item.id, (canvas) => {
+      const link    = document.createElement("a");
+      link.download = `${item.id}.png`;
+      link.href     = canvas.toDataURL("image/png");
+      link.click();
+      document.body.removeChild(tempDiv);
+    });
+  }, 120);
+}
+
+// ===================================================
 // DELETE ITEM MODAL
 // ===================================================
 function openDeleteItemModal() {
   if (!requireLogin()) return;
-  document.getElementById("deleteSearchInput").value = "";
+  document.getElementById("deleteSearchInput").value    = "";
   document.getElementById("deleteItemError").textContent = "";
   renderDeleteItemList();
   showModal("deleteItemModalOverlay");
   closeMenuPanel();
 }
 
-function closeDeleteItemModal() {
-  hideModal("deleteItemModalOverlay");
-}
+function closeDeleteItemModal() { hideModal("deleteItemModalOverlay"); }
 
 function renderDeleteItemList() {
   const container = document.getElementById("deleteItemList");
-  const search = document.getElementById("deleteSearchInput").value.trim().toLowerCase();
+  const search    = document.getElementById("deleteSearchInput").value.trim().toLowerCase().slice(0, 100);
 
-  const items = readLS(LS.items, [])
+  const items = safeReadItems()
     .filter(i => i.name.toLowerCase().includes(search))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -491,38 +823,41 @@ function renderDeleteItemList() {
         <p class="name">${escapeHtml(item.name)}</p>
         <p class="meta">${escapeHtml(toolboxName(item.toolbox))} • Qty: ${item.quantity}</p>
       </div>
-      <button class="deleteBtn" onclick="confirmDeleteItem('${item.id}')">Delete</button>
+      <button class="deleteBtn" data-id="${escapeHtml(item.id)}">Delete</button>
     </div>
   `).join("");
+
+  // Event delegation — avoids inline onclick with item IDs
+  container.querySelectorAll(".deleteBtn").forEach(btn => {
+    btn.addEventListener("click", () => confirmDeleteItem(btn.dataset.id));
+  });
 }
 
 function confirmDeleteItem(id) {
+  if (!isValidItemIdFormat(id)) return;
   const errorEl = document.getElementById("deleteItemError");
   errorEl.textContent = "";
 
-  const borrows = readLS(LS.borrows, []);
+  const borrows      = safeReadBorrows();
   const activeBorrow = borrows.find(b => b.itemId === id && !b.dateReturned);
   if (activeBorrow) {
     errorEl.textContent = "Cannot delete: this item is currently borrowed.";
     return;
   }
-
   if (!confirm("Delete this item permanently?")) return;
 
-  let items = readLS(LS.items, []);
-  items = items.filter(i => i.id !== id);
-  writeLS(LS.items, items);
-
+  writeLS(LS.items, safeReadItems().filter(i => i.id !== id));
   renderDeleteItemList();
   updateToolboxCounts();
 }
 
 // ===================================================
-// LOST AND FOUND MODAL (replaces old Missing Items)
+// LOST AND FOUND MODAL
 // ===================================================
 let selectedLostStatus = "lost";
 
 function selectLostStatus(status) {
+  if (status !== "lost" && status !== "found") return; // whitelist
   selectedLostStatus = status;
   document.querySelectorAll("#lostStatusChooser .toolboxChip").forEach(chip => {
     chip.classList.toggle("selected", chip.dataset.status === status);
@@ -531,59 +866,51 @@ function selectLostStatus(status) {
 
 function openLostFoundModal() {
   if (!requireLogin()) return;
-
-  document.getElementById("lostItemName").value = "";
-  document.getElementById("lostDescription").value = "";
+  document.getElementById("lostItemName").value         = "";
+  document.getElementById("lostDescription").value      = "";
   document.getElementById("lostFoundError").textContent = "";
   selectLostStatus("lost");
-
   renderLostFoundList();
   showModal("lostFoundModalOverlay");
   closeMenuPanel();
 }
 
-function closeLostFoundModal() {
-  hideModal("lostFoundModalOverlay");
-}
+function closeLostFoundModal() { hideModal("lostFoundModalOverlay"); }
 
 async function submitLostFound() {
-  const errorEl = document.getElementById("lostFoundError");
+  const errorEl     = document.getElementById("lostFoundError");
   errorEl.textContent = "";
 
-  const name = document.getElementById("lostItemName").value.trim();
-  const description = document.getElementById("lostDescription").value.trim();
+  const name        = sanitizeText(document.getElementById("lostItemName").value.trim(), 60);
+  const description = sanitizeText(document.getElementById("lostDescription").value.trim(), 100);
 
-  if (!name || name.length > 60) {
-    errorEl.textContent = "Please enter a valid item name (max 60 characters).";
-    return;
-  }
-  if (description.length > 100) {
-    errorEl.textContent = "Description must be under 100 characters.";
-    return;
-  }
+  if (!name || name.length > 60)        { errorEl.textContent = "Please enter a valid item name (max 60 characters)."; return; }
+  if (description.length > 100)         { errorEl.textContent = "Description must be under 100 characters."; return; }
+  if (selectedLostStatus !== "lost" && selectedLostStatus !== "found") return;
 
   const session = readLS(LS.session, { loggedIn: false });
+  if (!session.loggedIn) return;
 
-  const entries = readLS(LS.lostFound, []);
+  const entries = safeReadLF();
   entries.push({
-    id: "LF-" + Date.now(),
-    itemName: name,
+    id:            "LF-" + Date.now(),
+    itemName:      name,
     description,
-    status: selectedLostStatus,
-    reportedBy: session.fullName || "Unknown",
-    reportedByLrn: session.lrn || "",
-    dateReported: nowISO()
+    status:        selectedLostStatus,
+    reportedBy:    typeof session.fullName === "string" ? session.fullName : "Unknown",
+    reportedByLrn: typeof session.lrn      === "string" ? session.lrn      : "",
+    dateReported:  nowISO()
   });
   writeLS(LS.lostFound, entries);
 
-  document.getElementById("lostItemName").value = "";
+  document.getElementById("lostItemName").value    = "";
   document.getElementById("lostDescription").value = "";
   renderLostFoundList();
 }
 
 function renderLostFoundList() {
   const container = document.getElementById("lostFoundList");
-  const entries = readLS(LS.lostFound, [])
+  const entries   = safeReadLF()
     .slice()
     .sort((a, b) => new Date(b.dateReported) - new Date(a.dateReported));
 
@@ -604,7 +931,7 @@ function renderLostFoundList() {
 }
 
 // ===================================================
-// LIST OF BORROWER MODAL
+// BORROWER LIST MODAL
 // ===================================================
 function openBorrowerListModal() {
   if (!requireLogin()) return;
@@ -614,15 +941,13 @@ function openBorrowerListModal() {
   closeMenuPanel();
 }
 
-function closeBorrowerListModal() {
-  hideModal("borrowerListModalOverlay");
-}
+function closeBorrowerListModal() { hideModal("borrowerListModalOverlay"); }
 
 function renderBorrowerList() {
   const container = document.getElementById("borrowerListBox");
-  const search = document.getElementById("borrowerSearchInput").value.trim().toLowerCase();
+  const search    = document.getElementById("borrowerSearchInput").value.trim().toLowerCase().slice(0, 100);
 
-  const borrows = readLS(LS.borrows, [])
+  const borrows = safeReadBorrows()
     .filter(b =>
       b.borrowerName.toLowerCase().includes(search) ||
       b.itemName.toLowerCase().includes(search)
@@ -642,18 +967,23 @@ function renderBorrowerList() {
       </div>
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
         <span class="statusBadge ${b.dateReturned ? "returned" : "active"}">${b.dateReturned ? "Returned" : "Active"}</span>
-        <button class="seeInfoBtn" onclick="openBorrowInfo('${b.borrowId}')">See Info</button>
+        <button class="seeInfoBtn" data-id="${escapeHtml(b.borrowId)}">See Info</button>
       </div>
     </div>
   `).join("");
+
+  container.querySelectorAll(".seeInfoBtn").forEach(btn => {
+    btn.addEventListener("click", () => openBorrowInfo(btn.dataset.id));
+  });
 }
 
 // ===================================================
-// BORROW RECORD INFO MODAL ("See Info")
+// BORROW RECORD INFO MODAL
 // ===================================================
 function openBorrowInfo(borrowId) {
-  const borrows = readLS(LS.borrows, []);
-  const b = borrows.find(x => x.borrowId === borrowId);
+  if (!isValidBorrowIdFormat(borrowId)) return;
+  const borrows   = safeReadBorrows();
+  const b         = borrows.find(x => x.borrowId === borrowId);
   const container = document.getElementById("borrowInfoContent");
 
   if (!b) {
@@ -686,16 +1016,91 @@ function openBorrowInfo(borrowId) {
       }
     </div>
   `;
-
   showModal("borrowInfoModalOverlay");
 }
 
-function closeBorrowInfo() {
-  hideModal("borrowInfoModalOverlay");
+function closeBorrowInfo() { hideModal("borrowInfoModalOverlay"); }
+
+// ===================================================
+// SEARCH ITEM BY QR
+// ===================================================
+let searchByQrScanStop = null;
+
+function openSearchByQrModal() {
+  if (!requireLogin()) return;
+  document.getElementById("searchByQrError").textContent    = "";
+  document.getElementById("searchByQrScanStep").style.display   = "block";
+  document.getElementById("searchByQrResultStep").style.display = "none";
+  showModal("searchByQrModalOverlay");
+  closeMenuPanel();
+  startSearchByQrScan();
+}
+
+async function startSearchByQrScan() {
+  if (searchByQrScanStop) await searchByQrScanStop();
+  const controller = await startUniversalQrScan(
+    "searchByQrReader",
+    async (decodedText) => { await handleSearchByQrResult(decodedText); },
+    (msg) => { document.getElementById("searchByQrError").textContent = msg; }
+  );
+  searchByQrScanStop = controller.stop;
+}
+
+async function closeSearchByQrModal() {
+  hideModal("searchByQrModalOverlay");
+  if (searchByQrScanStop) { await searchByQrScanStop(); searchByQrScanStop = null; }
+}
+
+async function handleSearchByQrResult(qrText) {
+  const errorEl  = document.getElementById("searchByQrError");
+  const itemData = safeParseQr(qrText);
+  if (!itemData) { errorEl.textContent = "Invalid or unrecognized QR code."; return; }
+
+  const item = safeReadItems().find(i => i.id === itemData.id);
+  if (!item)  { errorEl.textContent = "Item not found in inventory."; return; }
+
+  renderSearchByQrResult(item);
+}
+
+function renderSearchByQrResult(item) {
+  document.getElementById("searchByQrScanStep").style.display   = "none";
+  document.getElementById("searchByQrResultStep").style.display = "block";
+
+  const container = document.getElementById("searchByQrResultContent");
+  const img = item.imageDataUrl
+    ? `<img src="${item.imageDataUrl}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:14px;">`
+    : "";
+
+  container.innerHTML = `
+    ${img}
+    <div class="infoSection">
+      <p class="infoLabel">Item</p>
+      <p class="infoValue">${escapeHtml(item.name)}</p>
+    </div>
+    <div class="infoSection">
+      <p class="infoLabel">Toolbox</p>
+      <p class="infoValue">${escapeHtml(toolboxName(item.toolbox))}</p>
+    </div>
+    <div class="infoSection">
+      <p class="infoLabel">Quantity in Stock</p>
+      <p class="infoValue">${item.quantity}</p>
+    </div>
+    <div class="infoSection">
+      <p class="infoLabel">Item ID</p>
+      <p class="infoValue">${escapeHtml(item.id)}</p>
+    </div>
+  `;
+}
+
+async function restartSearchByQrScan() {
+  document.getElementById("searchByQrError").textContent        = "";
+  document.getElementById("searchByQrResultStep").style.display = "none";
+  document.getElementById("searchByQrScanStep").style.display   = "block";
+  await startSearchByQrScan();
 }
 
 // ===================================================
-// INVENTORY MODAL — localStorage
+// INVENTORY MODAL — Download QR button (no modal)
 // ===================================================
 async function openInventoryModal() {
   if (!requireLogin()) return;
@@ -704,46 +1109,66 @@ async function openInventoryModal() {
   await loadInventory();
 }
 
-function closeInventoryModal() {
-  hideModal("inventoryModalOverlay");
-}
+function closeInventoryModal() { hideModal("inventoryModalOverlay"); }
 
 async function loadInventory() {
   const container = document.getElementById("inventoryList");
-  const items = readLS(LS.items, []).sort((a, b) => a.name.localeCompare(b.name));
+  const items     = safeReadItems();
 
   if (!items.length) {
     container.innerHTML = `<p class="emptyMsg">No items in inventory.</p>`;
     return;
   }
 
-  container.innerHTML = items.map(item => {
-    const img = item.imageDataUrl
-      ? `<img src="${item.imageDataUrl}" style="width:55px; height:55px; object-fit:cover; border-radius:8px;">`
-      : `<div style="width:55px; height:55px; background:#f0f0f0; border-radius:8px;"></div>`;
+  container.innerHTML = TOOLBOXES.map(t => {
+    const boxItems = items
+      .filter(i => Number(i.toolbox) === t.id)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    const rows = boxItems.length
+      ? boxItems.map(item => {
+          const img = item.imageDataUrl
+            ? `<img src="${item.imageDataUrl}" style="width:55px;height:55px;object-fit:cover;border-radius:8px;">`
+            : `<div style="width:55px;height:55px;background:#e3e3e8;border-radius:8px;"></div>`;
+          return `
+            <div class="itemRow">
+              ${img}
+              <div class="itemInfo">
+                <p class="name">${escapeHtml(item.name)}</p>
+                <p class="meta">Added: ${new Date(item.dateAdded).toLocaleDateString()}</p>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <div style="text-align:right;">
+                  <p style="margin:0;font-weight:bold;font-size:1.1em;color:#1797b8;">${item.quantity}</p>
+                  <p style="margin:0;font-size:.7em;color:#888;">in stock</p>
+                </div>
+                <button class="seeInfoBtn dlQrBtn" data-id="${escapeHtml(item.id)}">Download QR</button>
+              </div>
+            </div>
+          `;
+        }).join("")
+      : `<p class="emptyMsg">No items in this toolbox.</p>`;
 
     return `
-      <div class="itemRow">
-        ${img}
-        <div class="itemInfo">
-          <p class="name">${escapeHtml(item.name)}</p>
-          <p class="meta">${escapeHtml(toolboxName(item.toolbox))} • Added: ${new Date(item.dateAdded).toLocaleDateString()}</p>
-        </div>
-        <div style="text-align:right;">
-          <p style="margin:0; font-weight:bold; font-size:1.1em; color:#1797b8;">${item.quantity}</p>
-          <p style="margin:0; font-size:.7em; color:#888;">in stock</p>
-        </div>
+      <div class="inventorySection">
+        <p class="inventorySectionTitle">${escapeHtml(t.name)}</p>
+        ${rows}
       </div>
     `;
   }).join("");
+
+  // Safe event delegation — no inline onclick with item IDs
+  container.querySelectorAll(".dlQrBtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      if (isValidItemIdFormat(id)) downloadItemQr(id);
+    });
+  });
 }
 
 // ===================================================
 // UNIVERSAL QR SCANNER
 // ===================================================
-let borrowScanStop = null;
-let returnScanStop = null;
-
 async function startUniversalQrScan(targetDivId, onResult, onError) {
   const container = document.getElementById(targetDivId);
   container.innerHTML = "";
@@ -759,7 +1184,7 @@ async function startUniversalQrScan(targetDivId, onResult, onError) {
 
   const video = document.createElement("video");
   video.setAttribute("playsinline", "true");
-  video.style.width = "100%";
+  video.style.width        = "100%";
   video.style.borderRadius = "10px";
   container.appendChild(video);
 
@@ -769,7 +1194,7 @@ async function startUniversalQrScan(targetDivId, onResult, onError) {
       video: { facingMode: { ideal: "environment" } },
       audio: false
     });
-  } catch (e) {
+  } catch {
     onError("Camera permission denied or camera unavailable. Use Upload QR image.");
     return { stop: async () => {} };
   }
@@ -800,12 +1225,11 @@ async function startUniversalQrScan(targetDivId, onResult, onError) {
         if (codes?.length) {
           const text = codes[0].rawValue;
           await stop();
+          playBeep();
           onResult(text);
           return;
         }
-      } catch {
-        // ignore and keep scanning
-      }
+      } catch {}
       requestAnimationFrame(scanLoop);
     };
 
@@ -813,6 +1237,7 @@ async function startUniversalQrScan(targetDivId, onResult, onError) {
     return { stop };
   }
 
+  // Fallback: html5-qrcode
   try { stream.getTracks().forEach(t => t.stop()); } catch {}
 
   if (typeof Html5Qrcode === "undefined") {
@@ -827,6 +1252,7 @@ async function startUniversalQrScan(targetDivId, onResult, onError) {
     async (decodedText) => {
       try { await html5.stop(); } catch {}
       try { html5.clear(); } catch {}
+      playBeep();
       onResult(decodedText);
     },
     () => {}
@@ -844,6 +1270,18 @@ async function scanQrFromImageFile(event, mode) {
   const file = event.target.files?.[0];
   if (!file) return;
 
+  // Validate file type before even touching BarcodeDetector
+  if (!file.type.startsWith("image/")) {
+    alert("Please upload a valid image file.");
+    event.target.value = "";
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert("Image is too large (max 10 MB).");
+    event.target.value = "";
+    return;
+  }
+
   if (!("BarcodeDetector" in window)) {
     alert("Upload QR scanning not supported in this browser. Try Chrome/Edge, or use camera on HTTPS.");
     return;
@@ -851,23 +1289,24 @@ async function scanQrFromImageFile(event, mode) {
 
   try {
     const detector = new BarcodeDetector({ formats: ["qr_code"] });
-    const bmp = await createImageBitmap(file);
-    const codes = await detector.detect(bmp);
+    const bmp      = await createImageBitmap(file);
+    const codes    = await detector.detect(bmp);
 
-    if (!codes.length) {
-      alert("No QR code found in the image.");
-      return;
-    }
+    if (!codes.length) { alert("No QR code found in the image."); return; }
 
+    playBeep();
     const text = codes[0].rawValue;
 
     if (mode === "borrow") {
-      alert("Borrow upload: please use the camera scan step (or we can modify to support upload borrow).");
+      alert("Borrow upload: please use the camera scan step.");
       return;
     }
-
+    if (mode === "search") {
+      await handleSearchByQrResult(text);
+      return;
+    }
     await submitReturn(text);
-  } catch (e) {
+  } catch {
     alert("Failed to scan image QR.");
   } finally {
     event.target.value = "";
@@ -875,183 +1314,192 @@ async function scanQrFromImageFile(event, mode) {
 }
 
 // ===================================================
-// BORROW / RETURN (localStorage)
-// Provider = logged-in account at time of borrow.
-// Receiver = logged-in account at time of return.
-// Both come from session, NOT from the QR code (the QR only ever
-// identifies the item).
+// BORROW / RETURN
 // ===================================================
+let currentBorrowerInfo = null;
+let borrowScanStop      = null;
+let returnScanStop      = null;
+
 function openBorrowModal() {
   if (!requireLogin()) return;
-
-  document.getElementById("borrowFormStep").style.display = "block";
-  document.getElementById("borrowScanStep").style.display = "none";
-  document.getElementById("borrowerName").value = "";
-  document.getElementById("borrowerLrn").value = "";
-  document.getElementById("borrowerSection").value = "";
-  document.getElementById("borrowQuantity").value = "";
+  document.getElementById("borrowFormStep").style.display   = "block";
+  document.getElementById("borrowScanStep").style.display   = "none";
+  document.getElementById("borrowResultStep").style.display = "none";
+  document.getElementById("borrowerName").value     = "";
+  document.getElementById("borrowerLrn").value      = "";
+  document.getElementById("borrowerSection").value  = "";
+  document.getElementById("borrowQuantity").value   = "";
   document.getElementById("borrowFormError").textContent = "";
   document.getElementById("borrowScanError").textContent = "";
-
   showModal("borrowModalOverlay");
 }
 
 async function closeBorrowModal() {
   hideModal("borrowModalOverlay");
-  if (borrowScanStop) {
-    await borrowScanStop();
-    borrowScanStop = null;
-  }
+  if (borrowScanStop) { await borrowScanStop(); borrowScanStop = null; }
 }
 
 async function proceedToScan() {
-  const name = document.getElementById("borrowerName").value.trim();
-  const lrn = document.getElementById("borrowerLrn").value.trim();
-  const section = document.getElementById("borrowerSection").value.trim();
-  const quantity = Number(document.getElementById("borrowQuantity").value.trim());
-  const errorEl = document.getElementById("borrowFormError");
+  const name     = sanitizeName(document.getElementById("borrowerName").value.trim());
+  const lrn      = sanitizeLRN(document.getElementById("borrowerLrn").value.trim());
+  const section  = sanitizeSection(document.getElementById("borrowerSection").value.trim());
+  const quantity = parseInt(document.getElementById("borrowQuantity").value.trim(), 10);
+  const errorEl  = document.getElementById("borrowFormError");
 
-  if (!isValidName(name)) return (errorEl.textContent = "Enter a valid borrower name.");
-  if (!isValidLRN(lrn)) return (errorEl.textContent = "LRN must be exactly 12 digits.");
+  if (!isValidName(name))       return (errorEl.textContent = "Enter a valid borrower name.");
+  if (!isValidLRN(lrn))         return (errorEl.textContent = "LRN must be exactly 12 digits.");
   if (!isValidSection(section)) return (errorEl.textContent = "Enter a valid section (2–20).");
   if (!quantity || quantity <= 0) return (errorEl.textContent = "Enter a valid quantity.");
 
+  currentBorrowerInfo = { name, lrn, section, quantity };
   document.getElementById("borrowFormStep").style.display = "none";
   document.getElementById("borrowScanStep").style.display = "block";
-  document.getElementById("borrowScanError").textContent = "";
+  document.getElementById("borrowScanError").textContent  = "";
+  await startBorrowScan();
+}
 
+async function startBorrowScan() {
   if (borrowScanStop) await borrowScanStop();
-
+  const { name, lrn, section, quantity } = currentBorrowerInfo;
   const controller = await startUniversalQrScan(
     "borrowQrReader",
-    async (decodedText) => {
-      await submitBorrow(decodedText, name, lrn, section, quantity);
-    },
-    (msg) => {
-      document.getElementById("borrowScanError").textContent = msg;
-    }
+    async (decodedText) => { await submitBorrow(decodedText, name, lrn, section, quantity); },
+    (msg) => { document.getElementById("borrowScanError").textContent = msg; }
   );
-
   borrowScanStop = controller.stop;
 }
 
+async function restartBorrowScan() {
+  document.getElementById("borrowResultStep").style.display = "none";
+  document.getElementById("borrowScanStep").style.display   = "block";
+  document.getElementById("borrowScanError").textContent    = "";
+  await startBorrowScan();
+}
+
 async function submitBorrow(qrText, name, lrn, section, quantity) {
-  const errorEl = document.getElementById("borrowScanError");
+  const errorEl  = document.getElementById("borrowScanError");
+  const itemData = safeParseQr(qrText);
+  if (!itemData) { errorEl.textContent = "Invalid or unrecognized QR code."; return; }
 
-  let itemData;
-  try {
-    itemData = JSON.parse(qrText);
-  } catch {
-    errorEl.textContent = "Invalid QR code.";
-    return;
-  }
+  const items = safeReadItems();
+  const idx   = items.findIndex(it => it.id === itemData.id);
+  if (idx === -1)                    { errorEl.textContent = "Item not found in inventory."; return; }
+  if (items[idx].quantity < quantity) { errorEl.textContent = "Not enough stock for that quantity."; return; }
 
-  const items = readLS(LS.items, []);
-  const idx = items.findIndex(it => it.id === itemData.id);
-  if (idx === -1) return (errorEl.textContent = "Item not found in inventory.");
-  if (items[idx].quantity < quantity) return (errorEl.textContent = "Not enough stock for that quantity.");
-
-  items[idx].quantity -= quantity;
+  const borrowedItemName = items[idx].name;
+  items[idx].quantity   -= quantity;
   writeLS(LS.items, items);
 
-  // Provider = whoever is logged in and processing this borrow right now.
   const session = readLS(LS.session, { loggedIn: false });
-
-  const borrows = readLS(LS.borrows, []);
+  const borrows = safeReadBorrows();
   borrows.push({
-    borrowId: "BORROW-" + Date.now(),
-    itemId: items[idx].id,
-    itemName: items[idx].name,
-    borrowerName: name,
-    borrowerLrn: lrn,
+    borrowId:       "BORROW-" + Date.now(),
+    itemId:         itemData.id,
+    itemName:       borrowedItemName,
+    borrowerName:   name,
+    borrowerLrn:    lrn,
     borrowerSection: section,
     quantity,
-    providerName: session.fullName || "Unknown",
-    providerLrn: session.lrn || "",
-    dateBorrowed: nowISO(),
-    dateReturned: null,
-    receiverName: null,
-    receiverLrn: null
+    providerName:   typeof session.fullName === "string" ? session.fullName : "Unknown",
+    providerLrn:    typeof session.lrn      === "string" ? session.lrn      : "",
+    dateBorrowed:   nowISO(),
+    dateReturned:   null,
+    receiverName:   null,
+    receiverLrn:    null
   });
   writeLS(LS.borrows, borrows);
+  updateToolboxCounts();
 
-  alert("Item borrowed successfully!");
-  await closeBorrowModal();
+  document.getElementById("borrowScanStep").style.display   = "none";
+  document.getElementById("borrowResultStep").style.display = "block";
+  document.getElementById("borrowResultContent").innerHTML  = `
+    <div class="infoSection">
+      <p class="infoLabel">Borrowed</p>
+      <p class="infoValue">${escapeHtml(borrowedItemName)} × ${quantity}</p>
+    </div>
+    <div class="infoSection">
+      <p class="infoLabel">Borrower</p>
+      <p class="infoValue">${escapeHtml(name)} • LRN: ${escapeHtml(lrn)}</p>
+      <p class="infoValue">Section: ${escapeHtml(section)}</p>
+    </div>
+  `;
 }
 
 async function openReturnModal() {
   if (!requireLogin()) return;
-
-  document.getElementById("returnScanError").textContent = "";
-
-  if (returnScanStop) await returnScanStop();
-
+  document.getElementById("returnScanStep").style.display   = "block";
+  document.getElementById("returnResultStep").style.display = "none";
+  document.getElementById("returnScanError").textContent    = "";
   showModal("returnModalOverlay");
+  await startReturnScan();
+}
 
+async function startReturnScan() {
+  if (returnScanStop) await returnScanStop();
   const controller = await startUniversalQrScan(
     "returnQrReader",
-    async (decodedText) => {
-      await submitReturn(decodedText);
-    },
-    (msg) => {
-      document.getElementById("returnScanError").textContent = msg;
-    }
+    async (decodedText) => { await submitReturn(decodedText); },
+    (msg) => { document.getElementById("returnScanError").textContent = msg; }
   );
-
   returnScanStop = controller.stop;
+}
+
+async function restartReturnScan() {
+  document.getElementById("returnResultStep").style.display = "none";
+  document.getElementById("returnScanStep").style.display   = "block";
+  document.getElementById("returnScanError").textContent    = "";
+  await startReturnScan();
 }
 
 async function closeReturnModal() {
   hideModal("returnModalOverlay");
-  if (returnScanStop) {
-    await returnScanStop();
-    returnScanStop = null;
-  }
+  if (returnScanStop) { await returnScanStop(); returnScanStop = null; }
 }
 
 async function submitReturn(qrText) {
-  const errorEl = document.getElementById("returnScanError");
+  const errorEl  = document.getElementById("returnScanError");
+  const itemData = safeParseQr(qrText);
+  if (!itemData) { errorEl.textContent = "Invalid or unrecognized QR code."; return; }
 
-  let itemData;
-  try {
-    itemData = JSON.parse(qrText);
-  } catch {
-    errorEl.textContent = "Invalid QR code.";
-    return;
-  }
-
-  const borrows = readLS(LS.borrows, []);
-
+  const borrows  = safeReadBorrows();
   const revIndex = [...borrows].reverse().findIndex(b => b.itemId === itemData.id && !b.dateReturned);
-  if (revIndex === -1) {
-    errorEl.textContent = "No active borrow record found for this item.";
-    return;
-  }
-  const realIndex = borrows.length - 1 - revIndex;
+  if (revIndex === -1) { errorEl.textContent = "No active borrow record found for this item."; return; }
 
-  // Receiver = whoever is logged in and processing this return right now.
-  const session = readLS(LS.session, { loggedIn: false });
+  const realIndex = borrows.length - 1 - revIndex;
+  const session   = readLS(LS.session, { loggedIn: false });
 
   borrows[realIndex].dateReturned = nowISO();
-  borrows[realIndex].receiverName = session.fullName || "Unknown";
-  borrows[realIndex].receiverLrn = session.lrn || "";
+  borrows[realIndex].receiverName = typeof session.fullName === "string" ? session.fullName : "Unknown";
+  borrows[realIndex].receiverLrn  = typeof session.lrn      === "string" ? session.lrn      : "";
   writeLS(LS.borrows, borrows);
 
-  const items = readLS(LS.items, []);
-  const idx = items.findIndex(it => it.id === itemData.id);
+  const items = safeReadItems();
+  const idx   = items.findIndex(it => it.id === itemData.id);
   if (idx !== -1) {
     items[idx].quantity += Number(borrows[realIndex].quantity);
     writeLS(LS.items, items);
   }
 
-  alert("Item returned successfully!");
-  await closeReturnModal();
+  const rb = borrows[realIndex];
+  document.getElementById("returnScanStep").style.display   = "none";
+  document.getElementById("returnResultStep").style.display = "block";
+  document.getElementById("returnResultContent").innerHTML  = `
+    <div class="infoSection">
+      <p class="infoLabel">Returned</p>
+      <p class="infoValue">${escapeHtml(rb.itemName)} × ${rb.quantity}</p>
+    </div>
+    <div class="infoSection">
+      <p class="infoLabel">Received By</p>
+      <p class="infoValue">${escapeHtml(rb.receiverName)} • LRN: ${escapeHtml(rb.receiverLrn)}</p>
+      <p class="infoValue">${new Date(rb.dateReturned).toLocaleString()}</p>
+    </div>
+  `;
 }
 
 // ===================================================
 // INIT
 // ===================================================
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function() {
   updateFormLabels();
   const s = readLS(LS.session, null);
   if (!s) writeLS(LS.session, { loggedIn: false });
