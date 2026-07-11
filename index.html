@@ -15,7 +15,7 @@
 <body>
 <nav>
 <div class="navbar">
-<h2>TrackIT</h2>
+<h2>TrackiT</h2>
 
 <div class="event-wrapper">
 <input type="checkbox" checked id="menuToggle" class="event-wrapper-inp" />
@@ -147,18 +147,51 @@ autocomplete="off"
 </div>
 </nav>
 
-<div class="paragraph">
+
+
+<!-- ================= RECENTLY ADDED ITEMS CAROUSEL ================= -->
+<section class="band band--hero">
+
+
+<!-- From Uiverse.io by kennyotsu --> 
+<div class="card">
+  <div class="loader">
+    <p>WELCOME TO</p>
+    <div class="words">
+      <span class="word">TRACKit</span>
+      <span class="word">SCAN</span>
+      <span class="word">BORROW</span>
+      <span class="word">RETURN</span>
+      <span class="word">TRACKit</span>
+    </div>
+  </div>
+</div>
+
+
+  
+<section class="itemCarouselSection revealOnScroll" aria-label="Recently added items">
+  <div class="itemCarouselWrap">
+    <div class="itemCarousel" id="itemCarouselTrack"></div>
+    <div class="itemCarouselDots" id="itemCarouselDots"></div>
+  </div>
+</section>
+
+<div class="paragraph revealOnScroll">
 Need to borrow classroom items? You're in the right place! Borrow, return and keep track of items quickly and easily - all in one place.
 </div>
 
 <!-- Borrow/Return: only visible when logged in (toggled via JS in updateMenuUI) -->
-<button id="bottone1" class="hiddenForGuest" onclick="openBorrowModal()"><strong>BORROW ITEMS</strong></button>
-<button id="bottone2" class="hiddenForGuest" onclick="openReturnModal()"><strong>RETURN ITEMS</strong></button>
+<button id="bottone1" class="hiddenForGuest revealOnScroll" onclick="openBorrowModal()"><strong>BORROW ITEMS</strong></button>
+<button id="bottone2" class="hiddenForGuest revealOnScroll" onclick="openReturnModal()"><strong>RETURN ITEMS</strong></button>
 
-<div class="section-divider1"><span>SAMPLE ITEM</span></div>
+<!-- Borrow Now: only visible when NOT logged in (toggled via JS in updateMenuUI) -->
+<button id="bottoneGuest" class="hiddenForUser revealOnScroll" onclick="openGuestBorrowModal()"><strong>BORROW NOW</strong></button>
+
+
+<div class="section-divider1 revealOnScroll"><span>SAMPLE ITEM</span></div>
 
 <!-- From Uiverse.io by PriyanshuGupta28 -->
-<div class="marquee">
+<div class="marquee revealOnScroll">
 <div class="marquee__inner">
 <div class="marquee__group">
 <span>SCREW DRIVER</span>
@@ -173,12 +206,14 @@ Need to borrow classroom items? You're in the right place! Borrow, return and ke
 </div>
 </div>
 </div>
-
+</section>
+</section>
 <!-- ================= AVAILABLE ITEMS / TOOLBOXES ================= -->
-<div class="section-divider"><span>AVAILABLE ITEMS</span></div>
+<section class="band band--green">
+<div class="section-divider revealOnScroll"><span>TOOLBOXES</span></div>
 
 <!-- Search across every toolbox's items at once -->
-<div class="homeSearchWrap">
+<div class="homeSearchWrap revealOnScroll">
   <div class="searchBar">
     <input
       type="text"
@@ -192,32 +227,37 @@ Need to borrow classroom items? You're in the right place! Borrow, return and ke
 </div>
 
 <div class="toolbox-grid">
-<div class="toolbox-card" onclick="openToolboxView(1)">
-<div class="toolbox-icon"></div>
+<div class="toolbox-card revealOnScroll" data-toolbox-id="1" onclick="openToolboxView(1)">
 <p class="toolbox-name">TOOLBOX 1</p>
 <p class="toolbox-count" id="toolboxCount1">0 items</p>
+<div class="toolboxGraphic"></div>
 </div>
-<div class="toolbox-card" onclick="openToolboxView(2)">
-<div class="toolbox-icon"></div>
+<div class="toolboxDivider" aria-hidden="true"></div>
+<div class="toolbox-card revealOnScroll" data-toolbox-id="2" onclick="openToolboxView(2)">
 <p class="toolbox-name">TOOLBOX 2</p>
 <p class="toolbox-count" id="toolboxCount2">0 items</p>
+<div class="toolboxGraphic"></div>
 </div>
-<div class="toolbox-card" onclick="openToolboxView(3)">
-<div class="toolbox-icon"></div>
+<div class="toolboxDivider" aria-hidden="true"></div>
+<div class="toolbox-card revealOnScroll" data-toolbox-id="3" onclick="openToolboxView(3)">
 <p class="toolbox-name">TOOLBOX 3</p>
 <p class="toolbox-count" id="toolboxCount3">0 items</p>
+<div class="toolboxGraphic"></div>
 </div>
-<div class="toolbox-card" onclick="openToolboxView(4)">
-<div class="toolbox-icon"></div>
+<div class="toolboxDivider" aria-hidden="true"></div>
+<div class="toolbox-card revealOnScroll" data-toolbox-id="4" onclick="openToolboxView(4)">
 <p class="toolbox-name">TOOLBOX 4</p>
 <p class="toolbox-count" id="toolboxCount4">0 items</p>
+<div class="toolboxGraphic"></div>
 </div>
-<div class="toolbox-card" onclick="openToolboxView(5)">
-<div class="toolbox-icon"></div>
+<div class="toolboxDivider" aria-hidden="true"></div>
+<div class="toolbox-card revealOnScroll" data-toolbox-id="5" onclick="openToolboxView(5)">
 <p class="toolbox-name">RANDOM ITEM</p>
 <p class="toolbox-count" id="toolboxCount5">0 items</p>
+<div class="toolboxGraphic"></div>
 </div>
 </div>
+</section>
 
 <!-- TOOLBOX VIEW MODAL (reused for all 5 boxes) -->
 <div id="toolboxViewModalOverlay" class="modal-overlay" style="display:none;">
@@ -250,6 +290,10 @@ oninput="renderToolboxItems()"
 
 <div class="inputContainer" style="margin-top:15px;">
 <input placeholder="Name of item" id="itemName" class="inputField" type="text" maxlength="60" style="padding-left:15px;" />
+</div>
+
+<div class="inputContainer">
+<input placeholder="Short description (optional)" id="itemDescription" class="inputField" type="text" maxlength="120" style="padding-left:15px;" />
 </div>
 
 <div class="inputContainer">
@@ -451,6 +495,92 @@ If camera doesn't work, upload a QR image:
 </div>
 </div>
 </div>
+
+<!-- GUEST "BORROW NOW" NOTICE MODAL -->
+<div id="guestBorrowModalOverlay" class="modal-overlay" style="display:none;">
+<div class="modal-box" style="max-width:380px; width:90%;">
+<span class="modal-close" onclick="closeGuestBorrowModal()">×</span>
+<h3 class="modal-title">Borrow Item</h3>
+<p style="text-align:justify; font-size:.85em; color:#2e2e2e; line-height:1.6; margin-top:16px;">
+Please go to the ICT Laboratory or ask for assistance from any 12-Dewey student to process your item transaction. For now you can only browse our website and check items in the toolboxes. Before you leave please don't forget to leave a ratings at the very bottom.
+</p>
+</div>
+</div>
+
+<!-- ================= RATINGS & TESTIMONIALS (outside footer) ================= -->
+<section class="testimonialSection band band--gray" aria-label="Website ratings and testimonials">
+  <div class="testimonialSection__inner revealOnScroll">
+    <h3 class="testimonialSection__title">What people are saying</h3>
+
+    <div class="testimonialSummary">
+      <span class="testimonialSummary__score" id="testimonialAvgScore">0.0</span>
+      <div class="testimonialSummary__stars" id="testimonialAvgStars" aria-hidden="true"></div>
+      <span class="testimonialSummary__count" id="testimonialCount">0 ratings</span>
+    </div>
+
+    <div class="testimonialCarouselWrap">
+      
+      <div class="testimonialCarousel" id="testimonialCarouselTrack"></div>
+    
+    </div>
+    <div class="testimonialDots" id="testimonialDots"></div>
+
+    <button class="testimonialRateBtn" onclick="openRatingModal()">Rate our website</button>
+  </div>
+</section>
+
+<!-- RATE THIS WEBSITE MODAL -->
+<div id="ratingModalOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:400px; width:92%;">
+    <span class="modal-close" onclick="closeRatingModal()">×</span>
+    <h3 class="modal-title">Rate our website</h3>
+    <p style="text-align:center; font-size:.8em; color:#555; margin-top:6px;">Your rating is posted anonymously.</p>
+
+    <div class="starPicker" id="starPicker" role="radiogroup" aria-label="Star rating">
+      <span class="starPicker__star" data-value="1">★</span>
+      <span class="starPicker__star" data-value="2">★</span>
+      <span class="starPicker__star" data-value="3">★</span>
+      <span class="starPicker__star" data-value="4">★</span>
+      <span class="starPicker__star" data-value="5">★</span>
+    </div>
+
+    <textarea id="ratingTextInput" class="inputField ratingTextarea" maxlength="240" placeholder="Tell us what you think (optional)"></textarea>
+    <p id="ratingFormError" class="modalError"></p>
+    <button class="modalBtn" onclick="submitRating()">Submit</button>
+  </div>
+</div>
+
+<!-- ================= FOOTER ================= -->
+<footer class="siteFooter">
+  <div class="siteFooter__inner revealOnScroll">
+<div class="siteFooter__col">
+      <button class="siteFooter__toggle" aria-expanded="false" onclick="toggleFooterSection('footerAbout', this)">
+        About this website <span class="siteFooter__chev">▾</span>
+      </button>
+      <div class="siteFooter__panel" id="footerAbout">
+        <p>Trackit is an efficient, browser-based solution for managing classroom equipment such as screwdrivers, LAN testers, and drill sets. Each item is assigned a unique QR code, enabling fast, scan-based checkouts and returns. No additional server or account configuration is required beyond the login above.</p>
+      </div>
+    </div>
+    <div class="siteFooter__col">
+      <button class="siteFooter__toggle" aria-expanded="false" onclick="toggleFooterSection('footerLegal', this)">
+        Legal <span class="siteFooter__chev">▾</span>
+      </button>
+      <div class="siteFooter__panel" id="footerLegal">
+        <p>&copy; <span id="footerYearLegal"></span> TrackIT. All rights reserved.</p>
+        <p style="margin-top:8px;">Privacy Policy: the names, LRNs, and item records you enter are stored only in our databases. Nothing is transmitted to an external server or third party.</p>
+      </div>
+    </div>
+    <div class="siteFooter__col siteFooter__col--dev">
+      <button class="siteFooter__toggle" aria-expanded="false" onclick="toggleFooterSection('footerDev', this)">
+        About the Developer <span class="siteFooter__chev">▾</span>
+      </button>
+      <div class="siteFooter__panel" id="footerDev">
+        <p>Built by GROUP 1 — a student developer who created Trackit to make classroom item tracking faster, paperless, and a little less chaotic.</p>
+      </div>
+    </div>
+  </div>
+  <p class="siteFooter__bottom">&copy; <span id="footerYearBottom"></span> Trackit.</p>
+</footer>
 
 <!-- Libraries -->
 <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
