@@ -5,7 +5,6 @@
   --container-max: 1200px;
   --gutter: clamp(16px, 4vw, 35px);
 }
-
 *,
 *::before,
 *::after {
@@ -13,36 +12,19 @@
   margin: 0;
   padding: 0;
 }
-
 html {
   scroll-behavior: smooth;
 }
-
-
-
 body {
   min-height: 100vh;
   overflow-x: hidden;
   width: 100%;
   font-family:sans-serif;
   background-color: auto;
-  /* No photo background: every section below owns a real, solid/gradient
-     background of its own so the page divides into clearly separate
-     colored zones instead of colored boxes floating over a photo. This
-     color only shows if something is ever left unbanded, so it's picked
-     to match the zones around it rather than being a "gap" color. */
-  
 }
-
-/* Lock the page from scrolling while the menu drawer is open.
-   #menuToggle is checked = closed, unchecked = open (icon becomes an X),
-   so this watches the same state your hamburger already toggles.
-   (Modal scroll-lock itself is handled directly in JS via showModal/hideModal
-   so it can't be defeated by this rule being unsupported or stale.) */
 body:has(#menuToggle:not(:checked)) {
   overflow: hidden;
 }
-
 img,
 video,
 svg {
@@ -50,11 +32,6 @@ svg {
   height: auto;
   display: block;
 }
-
-/* =========================================================
-   BASE / MOBILE-FIRST STYLES
-   ========================================================= */
-
 .paragraph {
   text-align: center;
     display: flex;
@@ -134,10 +111,6 @@ h2 {
 .event-wrapper-inp:checked + .bar {
   transform: none;
 }
-
-/* Fluid width: caps at 392px on wide screens like before, but shrinks to
-   fit small phones instead of overflowing the viewport. Height similarly
-   adapts to short viewports (landscape phones) instead of a fixed 800px. */
 .menu-container {
   background-color: white;
   color: darkviolet;
@@ -401,10 +374,6 @@ h2 {
   color: #1797b8;
   cursor: default;
 }
-
-/* =========================================================
-   AUTH — LOGIN/REGISTER CHOICE BUTTONS
-   ========================================================= */
 #authChoice {
   display: flex;
   flex-direction: column;
@@ -443,11 +412,6 @@ h2 {
   margin-top: 8px;
   
 }
-
-/* =========================================================
-   AUTH FORM — From Uiverse.io by vinodjangid07
-   Fluid width so it never overflows very narrow phones.
-   ========================================================= */
 .form_main {
   width: min(320px, 100%);
   display: flex;
@@ -562,18 +526,6 @@ outline: none;
 .eyeIcon:hover {
   opacity: 1;
 }
-
-
-
-
-/* =========================================================
-   MODALS (Add Item, Borrow, Return, Toolbox view, etc.)
-   Backdrop is now a near-solid white wash + blur, so whatever is
-   behind (background image, page content) is fully hidden - not just
-   faded/blurred-but-visible. Padding uses a fluid fallback plus an
-   iOS safe-area-aware override (ignored gracefully by browsers that
-   don't support env(), which keeps the fallback instead).
-   ========================================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -781,21 +733,11 @@ outline: none;
     width: calc(25% - var(--gutter));
   }
 }
-
-/* =========================================================
-   LARGE DESKTOP  >= 1440px
-   ========================================================= */
 @media (min-width: 1440px) {
   .cards-wrapper {
     max-width: 1320px;
   }
 }
-
-/* =========================================================
-   PAGE BANDS — each major section gets its own full-bleed
-   background color so the page reads as distinct zones while
-   scrolling, per design request.
-   ========================================================= */
 .band {
   width: 100%;
   padding-top: 0px;
@@ -816,10 +758,6 @@ outline: none;
 .band--gray {
   background: #4a4d55;
 }
-
-/* =========================================================
-   SECTION DIVIDER ("--- AVAILABLE ITEMS ---")
-   ========================================================= */
 .section-divider {
   display: flex;
   align-items: center;
@@ -838,15 +776,6 @@ outline: none;
   border-bottom: 2px solid rgba(255, 255, 255, 0.6);
   margin: 0 12px;
 }
-
-/* =========================================================
-   TOOLBOX GRID (home page)
-   FIXED: cards previously had a fixed 280px width PLUS fixed
-   asymmetric margins (20/35/10/40px) - together that's 355px of
-   required space, wider than most phone screens, causing overflow/
-   clipping on small devices. Now fluid: width 100% capped at 320px,
-   centered via flex, spacing via `gap` instead of hardcoded margins.
-   ========================================================= */
 .toolbox-grid {
   display: flex;
   flex-direction: column;
@@ -856,10 +785,6 @@ outline: none;
   max-width: var(--container-max);
   margin: 0 auto;
 }
-
-/* From tablet width up, lay the boxes out as a centered, wrapping row
-   instead of one long column — makes better use of the space and keeps
-   every box perfectly centered regardless of how many fit per row. */
 @media (min-width: 700px) {
   .toolbox-grid {
     flex-direction: row;
@@ -915,8 +840,6 @@ outline: none;
   outline: none;
   background: transparent;
 }
-
-/* Toolbox graphic — plain picture, no lid-open animation. */
 .toolboxGraphic {
   position: relative;
   width: min(230px, 78vw);
@@ -953,10 +876,6 @@ outline: none;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
   pointer-events: none;
 }
-
-/* =========================================================
-   SEARCH BAR (toolbox view, delete item, borrower list)
-   ========================================================= */
 .searchBar {
   position: relative;
   display: flex;
@@ -974,12 +893,6 @@ outline: none;
 .searchInput {
   padding-left: 34px;
 }
-
-/* =========================================================
-   GENERIC LIST ROWS (toolbox items, delete list, lost & found,
-   borrower list all reuse this). Given a light gray card background
-   so each entry reads clearly against the now-white modal backdrop.
-   ========================================================= */
 .itemListBox {
   margin-top: 15px;
   max-height: 320px;
@@ -1081,12 +994,6 @@ outline: none;
   background: #d9f7e8;
   color: #0b7a45;
 }
-
-/* =========================================================
-   ITEM CAROUSEL (recently added items) — auto-advancing hero
-   banner, still manually scrollable/swipeable. Lives directly
-   below the navbar for both guests and logged-in users.
-   ========================================================= */
 .itemCarouselSection {
   width: 100%;
   max-width: var(--container-max);
@@ -1185,11 +1092,6 @@ outline: none;
     text-shadow: 0 0 15px #000;
     align-items: center;
 }
-
-/* =========================================================
-   SCROLL-REVEAL — fade + rise in as sections enter the
-   viewport. Toggled by IntersectionObserver in script.js.
-   ========================================================= */
 .revealOnScroll {
   opacity: 0;
   transform: translateY(28px);
@@ -1200,9 +1102,6 @@ outline: none;
   opacity: 1;
   transform: translateY(0);
 }
-
-/* Modal panels "rise" into place — pairs with the toolbox lid-open
-   animation so the item list feels like it emerges from the box. */
 .modal-box {
   transform: translateY(40px) scale(0.94);
   opacity: 0;
@@ -1213,10 +1112,6 @@ outline: none;
   transform: translateY(0) scale(1);
   opacity: 1;
 }
-
-/* =========================================================
-   RATINGS & TESTIMONIALS (sits above the footer, outside it)
-   ========================================================= */
 .testimonialSection {
   margin-top: 0;
   padding: 50px var(--gutter);
@@ -1376,8 +1271,6 @@ outline: none;
 }
 
 .testimonialRateBtn:hover { transform: translateY(-2px); }
-
-/* ---- Star picker inside the "Rate this website" modal ---- */
 .starPicker {
   display: flex;
   justify-content: center;
@@ -1412,10 +1305,6 @@ outline: none;
     flex-wrap: nowrap;
     align-content: center;
 }
-
-/* =========================================================
-   FOOTER
-   ========================================================= */
 .siteFooter {
   margin-top: 0;
   background: #0b1c42;
@@ -1432,7 +1321,6 @@ outline: none;
   padding-bottom: 30px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
-
 .siteFooter__heading {
   font-family: "Lucida Sans", sans-serif;
   font-weight: 700;
@@ -1440,7 +1328,6 @@ outline: none;
   margin-bottom: 8px;
   color: #fff;
 }
-
 .siteFooter__toggle {
   width: 100%;
   background: none;
@@ -1509,10 +1396,6 @@ outline: none;
   padding: 20px 0;
   font-size: 0.85em;
 }
-
-/* =========================================================
-   TOOLBOX CHOOSER (inside Add Item / Lost and Found modals)
-   ========================================================= */
 .fieldLabel {
   text-align: left;
   display: block;
@@ -1544,9 +1427,6 @@ outline: none;
   cursor: pointer;
   transition: all 0.15s;
 }
-
-/* If a toolbox chooser has an odd number of chips (e.g. 5 toolboxes),
-   make the last one span the full row instead of sitting half-empty. */
 .toolboxChooser .toolboxChip:last-child:nth-child(odd) {
   flex: 1 1 100%;
 }
@@ -1556,11 +1436,6 @@ outline: none;
   background: #8000ff;
   color: #fff;
 }
-
-/* =========================================================
-   PILL BUTTONS (Add/Delete/Lost and Found/Borrower List/Inventory/
-   Logout) styled to match the login #button look and feel
-   ========================================================= */
 .pillBtn {
   position: relative;
   display: block;
@@ -1615,10 +1490,6 @@ outline: none;
 .pillBtn.danger:hover {
   background-color: #b8123f;
 }
-
-/* =========================================================
-   BORROW RECORD INFO ("See Info" detail panel)
-   ========================================================= */
 .infoSection {
   margin-bottom: 16px;
   padding-bottom: 12px;
@@ -1729,9 +1600,6 @@ margin: 0 1.5rem;
   border-bottom: 2px solid rgba(255, 255, 255, 0.6);
   margin: 0 12px;
 }
-/* =========================================================
-   INVENTORY — toolbox section title
-   ========================================================= */
 .inventorySectionTitle {
   text-align: center;
   font-family: "Lucida Sans", sans-serif;
@@ -1836,12 +1704,10 @@ margin: 0 1.5rem;
     -webkit-transform: translateY(-300%);
     transform: translateY(-300%);
   }
-
   85% {
     -webkit-transform: translateY(-402%);
     transform: translateY(-402%);
   }
-
   100% {
     -webkit-transform: translateY(-400%);
     transform: translateY(-400%);
