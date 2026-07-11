@@ -12,7 +12,8 @@ const LS = Object.freeze({
   users:     "trackit_users",
   items:     "trackit_items",
   borrows:   "trackit_borrows",
-  lostFound: "trackit_lostfound"
+  lostFound: "trackit_lostfound",
+  ratings:   "trackit_ratings"
 });
 
 // ---------- 5 fixed toolbox categories (frozen) ----------
@@ -150,7 +151,9 @@ function isValidItem(i) {
     typeof i.id       === "string" && isValidItemIdFormat(i.id) &&
     typeof i.name     === "string" && i.name.length > 0 && i.name.length <= 60 &&
     typeof i.quantity === "number" && i.quantity >= 0 &&
-    typeof i.toolbox  === "number" && [1,2,3,4,5].includes(i.toolbox);
+    typeof i.toolbox  === "number" && [1,2,3,4,5].includes(i.toolbox) &&
+    (i.description === undefined || i.description === null ||
+      (typeof i.description === "string" && i.description.length <= 120));
 }
 
 function isValidBorrow(b) {
@@ -161,10 +164,19 @@ function isValidBorrow(b) {
     typeof b.quantity === "number" && b.quantity > 0;
 }
 
+function isValidRating(r) {
+  return r && typeof r === "object" &&
+    typeof r.id        === "string" &&
+    typeof r.stars     === "number" && r.stars >= 1 && r.stars <= 5 &&
+    typeof r.text      === "string" && r.text.length <= 240 &&
+    typeof r.dateAdded === "string";
+}
+
 function safeReadUsers()   { return readLS(LS.users,   []).filter(isValidUser); }
 function safeReadItems()   { return readLS(LS.items,   []).filter(isValidItem); }
 function safeReadBorrows() { return readLS(LS.borrows, []).filter(isValidBorrow); }
 function safeReadLF()      { return readLS(LS.lostFound, []); }
+function safeReadRatings() { return readLS(LS.ratings, []).filter(isValidRating); }
 
 // ---------- helpers ----------
 function nowISO() { return new Date().toISOString(); }
@@ -193,23 +205,32 @@ function closeMenuPanel() {
 let savedScrollY = 0;
 
 function showModal(overlayId) {
-  document.getElementById(overlayId).style.display = "flex";
+  const el = document.getElementById(overlayId);
+  el.style.display = "flex";
   savedScrollY = window.scrollY || window.pageYOffset || 0;
   document.body.style.position = "fixed";
   document.body.style.top      = `-${savedScrollY}px`;
   document.body.style.left     = "0";
   document.body.style.right    = "0";
   document.body.style.width    = "100%";
+  // Double rAF so the "is-showing" class is added on a later frame than
+  // display:flex — otherwise the browser coalesces both changes and the
+  // rise-in transition on .modal-box never plays.
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("is-showing")));
 }
 
 function hideModal(overlayId) {
-  document.getElementById(overlayId).style.display = "none";
-  document.body.style.position = "";
-  document.body.style.top      = "";
-  document.body.style.left     = "";
-  document.body.style.right    = "";
-  document.body.style.width    = "";
-  window.scrollTo(0, savedScrollY);
+  const el = document.getElementById(overlayId);
+  el.classList.remove("is-showing");
+  setTimeout(() => {
+    el.style.display = "none";
+    document.body.style.position = "";
+    document.body.style.top      = "";
+    document.body.style.left     = "";
+    document.body.style.right    = "";
+    document.body.style.width    = "";
+    window.scrollTo(0, savedScrollY);
+  }, 260);
 }
 let audioCtx = null;
 
@@ -436,6 +457,11 @@ function updateMenuUI() {
   if (bottone1) bottone1.style.display = loggedIn ? "" : "none";
   if (bottone2) bottone2.style.display = loggedIn ? "" : "none";
 
+  // "Borrow Now" is the mirror image of the pair above: guests see it,
+  // it disappears the moment someone logs in.
+  const bottoneGuest = document.getElementById("bottoneGuest");
+  if (bottoneGuest) bottoneGuest.style.display = loggedIn ? "none" : "";
+
   if (!loggedIn) showAuthChoice();
 }
 
@@ -566,6 +592,7 @@ function openAddItemModal() {
   if (!requireLogin()) return;
 
   document.getElementById("itemName").value                  = "";
+  document.getElementById("itemDescription").value           = "";
   document.getElementById("itemQuantity").value              = "";
   document.getElementById("itemImage").value                 = "";
   document.getElementById("itemImagePreview").style.display  = "none";
@@ -644,9 +671,10 @@ function generateItemQR() {
 }
 
 async function saveItem() {
-  const name     = sanitizeText(document.getElementById("itemName").value.trim(), 60);
-  const quantity = parseInt(document.getElementById("itemQuantity").value.trim(), 10);
-  const errorEl  = document.getElementById("itemFormError");
+  const name        = sanitizeText(document.getElementById("itemName").value.trim(), 60);
+  const description = sanitizeText(document.getElementById("itemDescription").value.trim(), 120);
+  const quantity     = parseInt(document.getElementById("itemQuantity").value.trim(), 10);
+  const errorEl      = document.getElementById("itemFormError");
   errorEl.textContent = "";
 
   if (!selectedToolboxId)         return (errorEl.textContent = "Please select a toolbox.");
@@ -657,6 +685,7 @@ async function saveItem() {
   items.push({
     id:           currentItemId,
     name,
+    description,
     quantity,
     toolbox:      selectedToolboxId,
     imageDataUrl: addItemImageDataUrl || null,
@@ -665,6 +694,7 @@ async function saveItem() {
   writeLS(LS.items, items);
 
   updateToolboxCounts();
+  renderItemCarousel();
   closeAddItemModal();
 }
 
@@ -849,6 +879,7 @@ function confirmDeleteItem(id) {
   writeLS(LS.items, safeReadItems().filter(i => i.id !== id));
   renderDeleteItemList();
   updateToolboxCounts();
+  renderItemCarousel();
 }
 
 // ===================================================
@@ -1497,6 +1528,325 @@ async function submitReturn(qrText) {
 }
 
 // ===================================================
+// GUEST "BORROW NOW" NOTICE
+// Guests can't self-serve a borrow/return — this just points them
+// to in-person help instead of opening the real borrow flow.
+// ===================================================
+function openGuestBorrowModal() {
+  showModal("guestBorrowModalOverlay");
+  closeMenuPanel();
+}
+
+function closeGuestBorrowModal() {
+  hideModal("guestBorrowModalOverlay");
+}
+
+// ===================================================
+// ITEM CAROUSEL — 20 most recently added items, shown to
+// guests and logged-in users alike. Auto-advances, but a
+// manual swipe/scroll/wheel pauses auto-advance for a while.
+// ===================================================
+let carouselAutoTimer   = null;
+let carouselPauseTimer  = null;
+let carouselIndex       = 0;
+
+function renderItemCarousel() {
+  const track = document.getElementById("itemCarouselTrack");
+  const dots  = document.getElementById("itemCarouselDots");
+  if (!track || !dots) return;
+
+  const items = safeReadItems()
+    .slice()
+    .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+    .slice(0, 20);
+
+  if (!items.length) {
+    track.innerHTML = `<div class="itemCarouselEmpty">We're Sorry. No items added yet, check back soon.</div>`;
+    dots.innerHTML  = "";
+    stopCarouselAuto();
+    return;
+  }
+
+  track.innerHTML = items.map(item => {
+    const bg = item.imageDataUrl
+      ? `background-image:url('${item.imageDataUrl}');`
+      : `background-color:#3a3a46;`;
+    return `
+      <div class="itemCarouselSlide" style="${bg}">
+        <div class="itemCarouselSlide__overlay">
+          <p class="itemCarouselSlide__name">${escapeHtml(item.name)}</p>
+          ${item.description ? `<p class="itemCarouselSlide__desc">${escapeHtml(item.description)}</p>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  dots.innerHTML = items.map((_, i) => `<span class="itemCarouselDot${i === 0 ? " active" : ""}" data-index="${i}"></span>`).join("");
+  dots.querySelectorAll(".itemCarouselDot").forEach(dot => {
+    dot.addEventListener("click", () => goToCarouselSlide(Number(dot.dataset.index)));
+  });
+
+  carouselIndex = 0;
+  startCarouselAuto();
+}
+
+function goToCarouselSlide(index) {
+  const track  = document.getElementById("itemCarouselTrack");
+  const slides = track?.querySelectorAll(".itemCarouselSlide");
+  if (!slides || !slides.length) return;
+  carouselIndex = ((index % slides.length) + slides.length) % slides.length;
+  track.scrollTo({ left: track.clientWidth * carouselIndex, behavior: "smooth" });
+  updateCarouselDots();
+}
+
+function updateCarouselDots() {
+  document.querySelectorAll("#itemCarouselDots .itemCarouselDot").forEach((dot, i) => {
+    dot.classList.toggle("active", i === carouselIndex);
+  });
+}
+
+function startCarouselAuto() {
+  stopCarouselAuto();
+  carouselAutoTimer = setInterval(() => {
+    const track = document.getElementById("itemCarouselTrack");
+    const count = track ? track.querySelectorAll(".itemCarouselSlide").length : 0;
+    if (!count) return;
+    goToCarouselSlide((carouselIndex + 1) % count);
+  }, 4000);
+}
+
+function stopCarouselAuto() {
+  if (carouselAutoTimer) { clearInterval(carouselAutoTimer); carouselAutoTimer = null; }
+}
+
+function pauseCarouselAutoTemporarily() {
+  stopCarouselAuto();
+  if (carouselPauseTimer) clearTimeout(carouselPauseTimer);
+  carouselPauseTimer = setTimeout(startCarouselAuto, 6000);
+}
+
+function initCarouselManualControls() {
+  const track = document.getElementById("itemCarouselTrack");
+  if (!track) return;
+
+  ["pointerdown", "touchstart", "wheel"].forEach(evt => {
+    track.addEventListener(evt, pauseCarouselAutoTemporarily, { passive: true });
+  });
+
+  let scrollDebounce = null;
+  track.addEventListener("scroll", () => {
+    clearTimeout(scrollDebounce);
+    scrollDebounce = setTimeout(() => {
+      if (!track.clientWidth) return;
+      const idx = Math.round(track.scrollLeft / track.clientWidth);
+      if (idx !== carouselIndex) { carouselIndex = idx; updateCarouselDots(); }
+    }, 100);
+  }, { passive: true });
+}
+
+// ===================================================
+// RATINGS & TESTIMONIALS
+//
+// Storage layer today = localStorage (see LS.ratings above), but every
+// read/write goes through this RatingsAPI wrapper so swapping to a real
+// backend later only means rewriting the bodies below — nothing that
+// calls RatingsAPI.* has to change. Drop-in backend shape:
+//   getAll()  -> GET  /api/ratings          (returns [{id,stars,text,dateAdded}])
+//   add(...)  -> POST /api/ratings  {stars,text}
+// ===================================================
+const RatingsAPI = {
+  getAll() {
+    // TODO(backend): replace with `return fetch('/api/ratings').then(r => r.json());`
+    return safeReadRatings().sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+  },
+
+  add(stars, text) {
+    // TODO(backend): replace with
+    //   return fetch('/api/ratings', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({ stars, text })
+    //   }).then(r => r.json());
+    const rating = {
+      id: `rt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      stars: Number(stars),
+      text: String(text || "").slice(0, 240),
+      dateAdded: nowISO()
+    };
+    const all = safeReadRatings();
+    all.push(rating);
+    writeLS(LS.ratings, all);
+    return rating;
+  },
+
+  getSummary() {
+    const all = this.getAll();
+    if (!all.length) return { average: 0, count: 0 };
+    const total = all.reduce((sum, r) => sum + r.stars, 0);
+    return { average: total / all.length, count: all.length };
+  }
+};
+
+function starString(count) {
+  const full = Math.round(count);
+  return "★".repeat(full) + "☆".repeat(5 - full);
+}
+
+let testimonialAutoTimer = null;
+let testimonialIndex     = 0;
+
+function renderTestimonialSummary() {
+  const { average, count } = RatingsAPI.getSummary();
+  const scoreEl = document.getElementById("testimonialAvgScore");
+  const starsEl = document.getElementById("testimonialAvgStars");
+  const countEl = document.getElementById("testimonialCount");
+  if (scoreEl) scoreEl.textContent = average.toFixed(1);
+  if (starsEl) starsEl.textContent = starString(average);
+  if (countEl) countEl.textContent = `${count} rating${count === 1 ? "" : "s"}`;
+}
+
+function renderTestimonials() {
+  const track = document.getElementById("testimonialCarouselTrack");
+  const dots  = document.getElementById("testimonialDots");
+  if (!track || !dots) return;
+
+  renderTestimonialSummary();
+
+  const ratings = RatingsAPI.getAll();
+
+  if (!ratings.length) {
+    track.innerHTML = `<div class="testimonialSlide"><p class="testimonialEmpty">No ratings yet — be the first to rate this website!</p></div>`;
+    dots.innerHTML  = "";
+    stopTestimonialAuto();
+    return;
+  }
+
+  track.innerHTML = ratings.map(r => `
+    <div class="testimonialSlide">
+      <div class="testimonialSlide__stars" aria-hidden="true">${starString(r.stars)}</div>
+      ${r.text ? `<p class="testimonialSlide__text">"${escapeHtml(r.text)}"</p>` : ""}
+      <p class="testimonialSlide__author">— Anonymous</p>
+    </div>
+  `).join("");
+
+  dots.innerHTML = ratings.map((_, i) => `<span class="testimonialDot${i === 0 ? " active" : ""}" data-index="${i}"></span>`).join("");
+  dots.querySelectorAll(".testimonialDot").forEach(dot => {
+    dot.addEventListener("click", () => goToTestimonialSlide(Number(dot.dataset.index)));
+  });
+
+  testimonialIndex = 0;
+  startTestimonialAuto();
+}
+
+function goToTestimonialSlide(index) {
+  const track  = document.getElementById("testimonialCarouselTrack");
+  const slides = track?.querySelectorAll(".testimonialSlide");
+  if (!slides || !slides.length) return;
+  testimonialIndex = ((index % slides.length) + slides.length) % slides.length;
+  track.scrollTo({ left: track.clientWidth * testimonialIndex, behavior: "smooth" });
+  document.querySelectorAll("#testimonialDots .testimonialDot").forEach((dot, i) => {
+    dot.classList.toggle("active", i === testimonialIndex);
+  });
+}
+
+function startTestimonialAuto() {
+  stopTestimonialAuto();
+  testimonialAutoTimer = setInterval(() => {
+    const track = document.getElementById("testimonialCarouselTrack");
+    const count = track ? track.querySelectorAll(".testimonialSlide").length : 0;
+    if (!count) return;
+    goToTestimonialSlide((testimonialIndex + 1) % count);
+  }, 5000);
+}
+
+function stopTestimonialAuto() {
+  if (testimonialAutoTimer) { clearInterval(testimonialAutoTimer); testimonialAutoTimer = null; }
+}
+
+// ---------- "Rate this website" modal + star picker ----------
+let selectedRatingStars = 0;
+
+function paintStarPicker(value) {
+  document.querySelectorAll("#starPicker .starPicker__star").forEach(star => {
+    star.classList.toggle("is-filled", Number(star.dataset.value) <= value);
+  });
+}
+
+function initStarPicker() {
+  const picker = document.getElementById("starPicker");
+  if (!picker) return;
+  picker.querySelectorAll(".starPicker__star").forEach(star => {
+    star.addEventListener("click", () => {
+      selectedRatingStars = Number(star.dataset.value);
+      paintStarPicker(selectedRatingStars);
+    });
+    star.addEventListener("mouseenter", () => paintStarPicker(Number(star.dataset.value)));
+    star.addEventListener("mouseleave", () => paintStarPicker(selectedRatingStars));
+  });
+}
+
+function openRatingModal() {
+  selectedRatingStars = 0;
+  paintStarPicker(0);
+  const textInput = document.getElementById("ratingTextInput");
+  const errorEl   = document.getElementById("ratingFormError");
+  if (textInput) textInput.value = "";
+  if (errorEl)   errorEl.textContent = "";
+  showModal("ratingModalOverlay");
+}
+
+function closeRatingModal() {
+  hideModal("ratingModalOverlay");
+}
+
+function submitRating() {
+  const errorEl = document.getElementById("ratingFormError");
+  if (!selectedRatingStars) {
+    if (errorEl) errorEl.textContent = "Please select a star rating.";
+    return;
+  }
+  const text = document.getElementById("ratingTextInput").value.trim().slice(0, 240);
+  RatingsAPI.add(selectedRatingStars, text);
+  closeRatingModal();
+  renderTestimonials();
+}
+
+// ===================================================
+// FADE-IN ON SCROLL — reveals .revealOnScroll elements
+// (toolboxes, dividers, footer, etc.) as they enter view.
+// ===================================================
+function initScrollReveal() {
+  const targets = document.querySelectorAll(".revealOnScroll");
+  if (!targets.length) return;
+
+  if (!("IntersectionObserver" in window)) {
+    targets.forEach(t => t.classList.add("is-visible"));
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+
+  targets.forEach(t => observer.observe(t));
+}
+
+// ===================================================
+// FOOTER — collapsible "About this website" / "Legal"
+// ===================================================
+function toggleFooterSection(panelId, btn) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  const isOpen = panel.classList.toggle("is-open");
+  if (btn) btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+
+// ===================================================
 // INIT
 // ===================================================
 document.addEventListener("DOMContentLoaded", function() {
@@ -1505,4 +1855,15 @@ document.addEventListener("DOMContentLoaded", function() {
   if (!s) writeLS(LS.session, { loggedIn: false });
   updateMenuUI();
   updateToolboxCounts();
+  renderItemCarousel();
+  initCarouselManualControls();
+  renderTestimonials();
+  initStarPicker();
+  initScrollReveal();
+
+  const yearLegal  = document.getElementById("footerYearLegal");
+  const yearBottom = document.getElementById("footerYearBottom");
+  const year       = new Date().getFullYear();
+  if (yearLegal)  yearLegal.textContent  = year;
+  if (yearBottom) yearBottom.textContent = year;
 });
