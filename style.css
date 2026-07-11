@@ -18,15 +18,20 @@ html {
   scroll-behavior: smooth;
 }
 
+
+
 body {
   min-height: 100vh;
   overflow-x: hidden;
   width: 100%;
   font-family:sans-serif;
-  background-image: url('webbg2.jpeg');
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
+  background-color: auto;
+  /* No photo background: every section below owns a real, solid/gradient
+     background of its own so the page divides into clearly separate
+     colored zones instead of colored boxes floating over a photo. This
+     color only shows if something is ever left unbanded, so it's picked
+     to match the zones around it rather than being a "gap" color. */
+  
 }
 
 /* Lock the page from scrolling while the menu drawer is open.
@@ -52,16 +57,17 @@ svg {
 
 .paragraph {
   text-align: center;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  padding: 20px 0 0 0;
-  margin: 25px var(--gutter) 0 var(--gutter);
-  font-family: "Lucida Sans", sans-serif;
-  font-size: clamp(14px, 2.5vw, 18px);
-  color: #ffffff;
-  pointer-events: none;
-  text-shadow: 0 0 20px #000000;
+    display: flex;
+    flex-wrap: wrap;
+    font-weight:400;
+    justify-content: center;
+    padding: 20px 0 0 0;
+    margin: 60px var(--gutter) 0 var(--gutter);
+    font-family: sans-serif;
+    font-size: clamp(20px, 2.5vw, 18px);
+    color: #ffffff;
+    pointer-events: none;
+    text-shadow: 0 0 20px #000000;
 }
 
 h2 {
@@ -285,7 +291,8 @@ h2 {
 
 /* From Uiverse.io by TCdesign-dev */
 #bottone1,
-#bottone2 {
+#bottone2,
+#bottoneGuest {
   width: min(280px, 90vw);
   height: 50px;
   margin: 10px auto 0;
@@ -300,7 +307,8 @@ h2 {
   box-shadow: 0px 0px 20px 0px #00000062;
 }
 
-#bottone1 {
+#bottone1,
+#bottoneGuest {
   margin-top: 60px;
 }
 
@@ -351,7 +359,7 @@ h2 {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  background-image: url("webbg2.jpeg");
+  background-image: url("https://image.made-in-china.com/2f0j00ydutRFvMyAch/Hand-Tools-1-100mm-Cr-V-Steel-Cross-Phillips-Head-Screwdriver.jpg");
   border-radius: 10px;
   margin-bottom: 12px;
   overflow: hidden;
@@ -473,7 +481,7 @@ h2 {
 .inputField {
   width: 100%;
   height: clamp(42px, 11vw, 46px);
-  background-color: transparent;
+  background-color: #fff;
   border: 2px solid rgb(173, 173, 173);
   border-radius: 30px;
   margin: 10px 0;
@@ -784,6 +792,32 @@ outline: none;
 }
 
 /* =========================================================
+   PAGE BANDS — each major section gets its own full-bleed
+   background color so the page reads as distinct zones while
+   scrolling, per design request.
+   ========================================================= */
+.band {
+  width: 100%;
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
+
+.band--hero {
+  background: #1e2640;
+  padding-top: 24px;
+  padding-bottom: 40px;
+}
+
+
+.band--green {
+  background:#dc9750;
+}
+
+.band--gray {
+  background: #4a4d55;
+}
+
+/* =========================================================
    SECTION DIVIDER ("--- AVAILABLE ITEMS ---")
    ========================================================= */
 .section-divider {
@@ -795,7 +829,7 @@ outline: none;
   letter-spacing: 2px;
   font-size: clamp(13px, 2vw, 16px);
   text-shadow: 0 0 20px #000;
-  margin: 60px var(--gutter) 20px;
+  margin: 0 var(--gutter) 20px;
 }
 .section-divider::before,
 .section-divider::after {
@@ -818,49 +852,105 @@ outline: none;
   flex-direction: column;
   align-items: center;
   gap: clamp(14px, 4vw, 22px);
-  padding: 0 var(--gutter) 50px;
+  padding: 0 var(--gutter) 10px;
   max-width: var(--container-max);
   margin: 0 auto;
+}
+
+/* From tablet width up, lay the boxes out as a centered, wrapping row
+   instead of one long column — makes better use of the space and keeps
+   every box perfectly centered regardless of how many fit per row. */
+@media (min-width: 700px) {
+  .toolbox-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .toolbox-card {
+    width: calc(50% - var(--gutter));
+  }
+
+  .toolboxDivider {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .toolbox-card {
+    width: calc(33.333% - var(--gutter));
+  }
+}
+
+@media (min-width: 1440px) {
+  .toolbox-card {
+    width: calc(25% - var(--gutter));
+  }
 }
 
 .toolbox-card {
   width: 100%;
   max-width: 300px;
-  background-color: var(--white);
+  background: transparent;
   border-radius: 16px;
-  padding: clamp(80px, 9vw, 70px) 16px;
+  padding: 6px 16px 4px;
   text-align: center;
   cursor: pointer;
-  box-shadow: 0px 10px 12px rgba(0, 0, 0, 0.12), -4px -4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.25s;
+  box-shadow: none;
+  transition: transform 0.25s;
+  outline: none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .toolbox-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0px 18px 20px rgba(0, 0, 0, 0.15),
-    -4px -4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
 }
 
-.toolbox-icon {
-  font-size: 40px;
-  margin-bottom: 8px;
+.toolbox-card:focus,
+.toolbox-card:active {
+  outline: none;
+  background: transparent;
+}
+
+/* Toolbox graphic — plain picture, no lid-open animation. */
+.toolboxGraphic {
+  position: relative;
+  width: min(230px, 78vw);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto 8px;
+  background-image: url('toolbox_yellow.jpeg');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.45));
   pointer-events: none;
+}
+
+.toolboxDivider {
+  width: min(246px, 83vw);
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgb(74 74 74 / 87%), transparent);
+    margin: -2px auto 4px;
 }
 
 .toolbox-name {
   font-family: "Lucida Sans", sans-serif;
   font-weight: 700;
-  color: #1797b8;
+  color: #fff;
   font-size: clamp(16px, 4.2vw, 20px);
   margin-bottom: 4px;
-  text-shadow: 0 0 20px #00000071;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   pointer-events: none;
 }
 
 .toolbox-count {
   font-size: clamp(10px, 2.6vw, 12px);
-  color: #888;
-  text-shadow: 0 0 20px #00000071;
+  color: #eafff2;
+  opacity: 0.85;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
   pointer-events: none;
 }
 
@@ -990,6 +1080,427 @@ outline: none;
 .statusBadge.returned {
   background: #d9f7e8;
   color: #0b7a45;
+}
+
+/* =========================================================
+   ITEM CAROUSEL (recently added items) — auto-advancing hero
+   banner, still manually scrollable/swipeable. Lives directly
+   below the navbar for both guests and logged-in users.
+   ========================================================= */
+.itemCarouselSection {
+  width: 100%;
+  max-width: var(--container-max);
+  margin: -160px auto 0;
+  padding: 0 var(--gutter);
+}
+
+.itemCarouselWrap {
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.itemCarousel {
+  display: flex;
+  width: 100%;
+  height: clamp(190px, 42vw, 300px);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.itemCarousel::-webkit-scrollbar {
+  display: none;
+}
+
+.itemCarouselSlide {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  background-size: cover;
+  background-position: center;
+  background-color: #14141c;
+  display: flex;
+  align-items: flex-end;
+}
+
+.itemCarouselSlide__overlay {
+  width: 100%;
+  padding: 16px clamp(14px, 4vw, 26px) 22px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0));
+  color: #fff;
+}
+
+.itemCarouselSlide__name {
+  font-family: "Lucida Sans", sans-serif;
+  font-weight: 700;
+  font-size: clamp(15px, 4vw, 19px);
+  text-shadow: 0 0 10px #000;
+}
+
+.itemCarouselSlide__desc {
+  font-size: clamp(11px, 2.8vw, 13px);
+  opacity: 0.9;
+  margin-top: 3px;
+  max-width: 90%;
+}
+
+.itemCarouselDots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.itemCarouselDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  transition: all 0.25s;
+  cursor: pointer;
+}
+
+.itemCarouselDot.active {
+  background: #fff;
+  width: 18px;
+  border-radius: 5px;
+}
+
+.itemCarouselEmpty {
+ text-align: center;
+    color: #db0505;
+    opacity: 0.75;
+    font-size: 0.9em;
+    display: flex;
+    font-weight: 500;
+    padding: 40px 40px;
+    text-shadow: 0 0 15px #000;
+    align-items: center;
+}
+
+/* =========================================================
+   SCROLL-REVEAL — fade + rise in as sections enter the
+   viewport. Toggled by IntersectionObserver in script.js.
+   ========================================================= */
+.revealOnScroll {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.revealOnScroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Modal panels "rise" into place — pairs with the toolbox lid-open
+   animation so the item list feels like it emerges from the box. */
+.modal-box {
+  transform: translateY(40px) scale(0.94);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+}
+
+.modal-overlay.is-showing .modal-box {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+/* =========================================================
+   RATINGS & TESTIMONIALS (sits above the footer, outside it)
+   ========================================================= */
+.testimonialSection {
+  margin-top: 0;
+  padding: 50px var(--gutter);
+}
+
+.testimonialSection__inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.testimonialSection__title {
+  font-family: "Lucida Sans", sans-serif;
+  font-weight: 700;
+  color: #fff;
+  font-size: 1.3em;
+  margin-bottom: 10px;
+}
+
+.testimonialSummary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.testimonialSummary__score {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: #fff;
+}
+
+.testimonialSummary__stars {
+  color: #ffcc33;
+  font-size: 1.2em;
+  letter-spacing: 2px;
+}
+
+.testimonialSummary__count {
+  color: #cfc9e6;
+  font-size: 0.85em;
+}
+
+.testimonialCarouselWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.testimonialCarousel {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  gap: 0;
+  border-radius: 14px;
+}
+
+.testimonialCarousel::-webkit-scrollbar { display: none; }
+
+.testimonialSlide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 20px 22px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.testimonialSlide__stars {
+  color: #ffcc33;
+  letter-spacing: 2px;
+  font-size: 1.05em;
+}
+
+.testimonialSlide__text {
+  color: #eae6f5;
+  font-size: 0.9em;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.testimonialSlide__author {
+  color: #a89fcf;
+  font-size: 0.78em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.testimonialEmpty {
+  color: #cfc9e6;
+  font-size: 0.85em;
+  padding: 10px 0;
+}
+
+.testimonialArrow {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 1.2em;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.testimonialArrow:hover { background: rgba(255, 255, 255, 0.18); }
+
+.testimonialDots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.testimonialDots .itemCarouselDot,
+.testimonialDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.testimonialDot.active {
+  background: #ffcc33;
+  transform: scale(1.2);
+}
+
+.testimonialRateBtn {
+  margin-top: 10px;
+    background: linear-gradient(160deg, #ffd23f, #f7b400);
+    border: none;
+    color: #2a1c00;
+    font-weight: 700;
+    font-size: 0.9em;
+    padding: 10px 112px;
+    border-radius: 999px;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.testimonialRateBtn:hover { transform: translateY(-2px); }
+
+/* ---- Star picker inside the "Rate this website" modal ---- */
+.starPicker {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-size: 2em;
+  margin: 16px 0 6px;
+}
+
+.starPicker__star {
+  color: #d8d3e8;
+  cursor: pointer;
+  transition: color 0.15s, transform 0.15s;
+}
+
+.starPicker__star.is-filled {
+  color: #ffcc33;
+}
+
+.starPicker__star:hover {
+  transform: scale(1.15);
+}
+
+.ratingTextarea {
+  width: 100%;
+    min-height: 80px;
+    resize: vertical;
+    text-align: center;
+    margin-top: 10px;
+    font-family: inherit;
+    padding: 10px 12px;
+    align-items: center;
+    flex-wrap: nowrap;
+    align-content: center;
+}
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+.siteFooter {
+  margin-top: 0;
+  background: #0b1c42;
+  color: #eae6f5;
+  padding: 40px var(--gutter) 0;
+}
+
+.siteFooter__inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.siteFooter__heading {
+  font-family: "Lucida Sans", sans-serif;
+  font-weight: 700;
+  font-size: 1em;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.siteFooter__toggle {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #fff;
+  font-family: "Lucida Sans", sans-serif;
+  font-weight: 700;
+  font-size: 1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.siteFooter__chev {
+  transition: transform 0.25s;
+}
+
+.siteFooter__toggle[aria-expanded="true"] .siteFooter__chev {
+  transform: rotate(180deg);
+}
+
+.siteFooter__panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  font-size: 0.85em;
+  line-height: 1.6;
+  color: #c9c2e0;
+}
+
+.siteFooter__panel.is-open {
+  max-height: 400px;
+  padding-top: 8px;
+  text-align: justify;
+}
+
+.siteFooter__col--dev p {
+  font-size: 0.85em;
+  line-height: 1.6;
+  color: #c9c2e0;
+}
+
+.siteFooter__bottom {
+  text-align: center;
+  font-size: 0.75em;
+  color: #8f87ab;
+  padding: 16px 0 26px;
+}
+
+@media (min-width: 768px) {
+  .siteFooter__inner {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .siteFooter__col {
+    flex: 1;
+  }
 }
 
 .emptyMsg {
@@ -1143,7 +1654,8 @@ outline: none;
 /* From Uiverse.io by PriyanshuGupta28 */ 
 .marquee {
   pointer-events: none;
-  MARGIN: 70px 0 0 0;
+  margin: 0;
+  padding-bottom: 40px;
   overflow: hidden;
   /* hide the scrolling overflow */
   width: 100%;
@@ -1208,7 +1720,7 @@ margin: 0 1.5rem;
   letter-spacing: 2px;
   font-size: clamp(13px, 2vw, 16px);
   text-shadow: 0 0 20px #000;
-  margin: 150px var(--gutter) -20px;
+  margin: 100px var(--gutter) 20px;
 }
 .section-divider1::before,
 .section-divider1::after {
@@ -1231,4 +1743,107 @@ margin: 0 1.5rem;
   margin: 18px 0 10px;
   padding-bottom: 6px;
   border-bottom: 2px solid #39383a46;
+}
+/* From Uiverse.io by kennyotsu */ 
+.card {
+  /* color used to softly clip top and bottom of the .words container */
+  display: flex;
+    width: 100%;
+    max-width: 355px;
+    height: auto;
+    min-height: 230px;
+    max-height: 294px;
+    box-shadow: none;
+    background-color: transparent;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: -35px 20px -40px 10px;
+    pointer-events: none;
+    transition: all 0.3s;
+    cursor: pointer;
+    box-sizing: border-box;
+    padding: 0 0 0px 0px;
+    align-content: stretch;
+    align-items: center;
+}
+.loader {
+  color: rgb(222, 218, 218);
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 25px;
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box;
+  height: 40px;
+  padding: 30px 10px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  border-radius: 8px;
+}
+
+.words {
+  overflow: hidden;
+  position: relative;
+}
+.words::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    var(--bg-color) 10%,
+    transparent 30%,
+    transparent 70%,
+    var(--bg-color) 90%
+  );
+  z-index: 20;
+}
+
+.word {
+  display: block;
+  height: 100%;
+  padding-left: 6px;
+  color: #956afa;
+  animation: spin_4991 4s infinite;
+}
+
+@keyframes spin_4991 {
+  10% {
+    -webkit-transform: translateY(-102%);
+    transform: translateY(-102%);
+  }
+
+  25% {
+    -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+  }
+
+  35% {
+    -webkit-transform: translateY(-202%);
+    transform: translateY(-202%);
+  }
+
+  50% {
+    -webkit-transform: translateY(-200%);
+    transform: translateY(-200%);
+  }
+
+  60% {
+    -webkit-transform: translateY(-302%);
+    transform: translateY(-302%);
+  }
+
+  75% {
+    -webkit-transform: translateY(-300%);
+    transform: translateY(-300%);
+  }
+
+  85% {
+    -webkit-transform: translateY(-402%);
+    transform: translateY(-402%);
+  }
+
+  100% {
+    -webkit-transform: translateY(-400%);
+    transform: translateY(-400%);
+  }
 }
