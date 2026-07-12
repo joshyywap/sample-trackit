@@ -27,7 +27,19 @@ body {
   overscroll-behavior-x: none;
   font-family:sans-serif;
   background-color: auto;
+  /* No photo background: every section below owns a real, solid/gradient
+     background of its own so the page divides into clearly separate
+     colored zones instead of colored boxes floating over a photo. This
+     color only shows if something is ever left unbanded, so it's picked
+     to match the zones around it rather than being a "gap" color. */
+  
 }
+
+/* Lock the page from scrolling while the menu drawer is open.
+   #menuToggle is checked = closed, unchecked = open (icon becomes an X),
+   so this watches the same state your hamburger already toggles.
+   (Modal scroll-lock itself is handled directly in JS via showModal/hideModal
+   so it can't be defeated by this rule being unsupported or stale.) */
 body:has(#menuToggle:not(:checked)) {
   overflow: hidden;
 }
@@ -933,7 +945,7 @@ outline: none;
   width: min(230px, 78vw);
   aspect-ratio: 1 / 1;
   margin: 0 auto 8px;
-  background-image: url('toolbox_yellow.png');
+  background-image: url('toolbox_yellow.jpeg');
   background-repeat: no-repeat;
   background-size: 100% 100%;
   filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.45));
