@@ -1099,7 +1099,7 @@ function renderSearchByQrResult(item) {
 
   const container = document.getElementById("searchByQrResultContent");
   const img = item.imageDataUrl
-    ? `<img src="${item.imageDataUrl}" style="width:100%; height:160px; object-fit:cover; border-radius:12px; margin-bottom:14px;">`
+    ? `<img src="${item.imageDataUrl}" style="width:100%; height:160px; object-fit:contain; border-radius:12px; margin-bottom:14px;">`
     : "";
 
   container.innerHTML = `
@@ -1159,7 +1159,7 @@ async function loadInventory() {
     const rows = boxItems.length
       ? boxItems.map(item => {
           const img = item.imageDataUrl
-            ? `<img src="${item.imageDataUrl}" style="width:55px;height:55px;object-fit:cover;border-radius:8px;">`
+            ? `<img src="${item.imageDataUrl}" style="width:55px;height:55px;object-fit:contain;border-radius:8px;">`
             : `<div style="width:55px;height:55px;background:#e3e3e8;border-radius:8px;"></div>`;
           return `
             <div class="itemRow">
@@ -1715,7 +1715,7 @@ function renderTestimonials() {
   const ratings = RatingsAPI.getAll();
 
   if (!ratings.length) {
-    track.innerHTML = `<div class="testimonialSlide"><p class="testimonialEmpty">No ratings yet — be the first to rate this website!</p></div>`;
+    track.innerHTML = `<div class="testimonialSlide"><p class="testimonialEmpty">Be the first to rate our website!</p></div>`;
     dots.innerHTML  = "";
     stopTestimonialAuto();
     return;
@@ -1812,6 +1812,98 @@ function submitRating() {
 }
 
 // ===================================================
+// SAMPLE ITEM MARQUEE — 20 self-contained icon "photos"
+// (inline SVG, no external files/network needed) so the
+// strip shows a real picture per item instead of a text
+// pill. Every icon shares the same 64x64 canvas, so they
+// all come out a uniform size no matter what they draw.
+// ===================================================
+const MARQUEE_ITEMS = [
+  { name: "Screwdriver", svg: `<rect x="6" y="26" width="16" height="12" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><line x1="22" y1="32" x2="50" y2="32" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M50,25 L58,32 L50,39" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>` },
+  { name: "LAN Cable Tester", svg: `<rect x="14" y="10" width="30" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="22" cy="19" r="2.2" fill="#dc9750"/><circle cx="29" cy="19" r="2.2" fill="#dc9750"/><circle cx="36" cy="19" r="2.2" fill="#dc9750"/><rect x="24" y="27" width="10" height="7" fill="none" stroke="currentColor" stroke-width="2"/><line x1="29" y1="40" x2="29" y2="50" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="24" y="50" width="10" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>` },
+  { name: "Drill Set", svg: `<rect x="8" y="24" width="30" height="14" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><path d="M14,38 L9,54" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/><path d="M14,38 L14,46" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/><circle cx="44" cy="31" r="7" fill="none" stroke="currentColor" stroke-width="3"/><line x1="51" y1="31" x2="60" y2="31" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>` },
+  { name: "Punch Down Tool", svg: `<rect x="6" y="26" width="14" height="12" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20,32 L30,32 L34,26 L38,38 L42,28 L46,32 L50,32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="50" y="28" width="6" height="8" fill="none" stroke="currentColor" stroke-width="2.5"/>` },
+  { name: "Crimping Tool", svg: `<circle cx="30" cy="34" r="3" fill="currentColor"/><path d="M30,34 L14,54" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M30,34 L44,58" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M30,34 L20,14" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M30,34 L38,12" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="16" y="8" width="10" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>` },
+  { name: "Wire Stripper", svg: `<circle cx="30" cy="36" r="3" fill="currentColor"/><path d="M30,36 L14,56" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M30,36 L44,58" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M30,36 L22,14" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><path d="M30,36 L38,14" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><circle cx="26" cy="20" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="34" cy="20" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>` },
+  { name: "Multimeter", svg: `<rect x="16" y="12" width="32" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="3"/><rect x="21" y="17" width="22" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="32" cy="37" r="6" fill="none" stroke="currentColor" stroke-width="2.5"/><line x1="24" y1="46" x2="16" y2="58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="40" y1="46" x2="48" y2="58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>` },
+  { name: "Wrench", svg: `<polygon points="14,46 8,50 8,58 14,62 20,58 20,50" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><line x1="18" y1="48" x2="42" y2="24" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="48" cy="18" r="9" fill="none" stroke="currentColor" stroke-width="4"/>` },
+  { name: "Pliers", svg: `<circle cx="32" cy="32" r="3" fill="currentColor"/><path d="M32,32 L14,54" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M32,32 L46,58" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M32,32 L22,10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M32,32 L42,10" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>` },
+  { name: "Hammer", svg: `<rect x="8" y="10" width="26" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><path d="M8,14 L2,10 M8,22 L2,26" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/><line x1="30" y1="24" x2="54" y2="56" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>` },
+  { name: "Tape Measure", svg: `<circle cx="26" cy="34" r="18" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="26" cy="34" r="5" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="40" y="10" width="16" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/><line x1="36" y1="20" x2="42" y2="14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>` },
+  { name: "Utility Knife", svg: `<rect x="6" y="26" width="26" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><polygon points="32,26 54,32 32,38" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>` },
+  { name: "Soldering Iron", svg: `<rect x="6" y="40" width="20" height="12" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><line x1="26" y1="42" x2="50" y2="18" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><path d="M50,18 L58,10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><path d="M8,52 C2,56 2,60 8,62" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>` },
+  { name: "Flashlight", svg: `<rect x="24" y="24" width="30" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><path d="M24,26 L12,30 L12,34 L24,38 Z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/><line x1="8" y1="24" x2="2" y2="20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="6" y1="32" x2="0" y2="32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="8" y1="40" x2="2" y2="44" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>` },
+  { name: "Tool Box", svg: `<path d="M22,26 C22,16 42,16 42,26" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><rect x="8" y="26" width="48" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="3"/><line x1="8" y1="38" x2="56" y2="38" stroke="currentColor" stroke-width="2"/><rect x="29" y="34" width="6" height="8" rx="1.5" fill="#dc9750"/>` },
+  { name: "Safety Goggles", svg: `<rect x="8" y="24" width="18" height="16" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><rect x="38" y="24" width="18" height="16" rx="6" fill="none" stroke="currentColor" stroke-width="3"/><line x1="26" y1="32" x2="38" y2="32" stroke="currentColor" stroke-width="3"/><line x1="8" y1="28" x2="1" y2="24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><line x1="56" y1="28" x2="63" y2="24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>` },
+  { name: "Allen Key Set", svg: `<path d="M14,54 L14,32 L28,32" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M26,56 L26,24 L42,24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M38,58 L38,16 L56,16" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>` },
+  { name: "Extension Cord", svg: `<path d="M6,40 C14,20 20,60 28,40 C36,20 42,60 50,40" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/><rect x="0" y="34" width="8" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="50" y="34" width="8" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>` },
+  { name: "Electrical Tape", svg: `<ellipse cx="32" cy="20" rx="16" ry="6" fill="none" stroke="currentColor" stroke-width="3"/><line x1="16" y1="20" x2="16" y2="44" stroke="currentColor" stroke-width="3"/><line x1="48" y1="20" x2="48" y2="44" stroke="currentColor" stroke-width="3"/><path d="M16,44 C16,48 48,48 48,44" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="20" r="5" fill="none" stroke="currentColor" stroke-width="2"/>` },
+  { name: "Spirit Level", svg: `<rect x="4" y="28" width="56" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="32" cy="33" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="32" cy="33" r="2" fill="#dc9750"/><circle cx="14" cy="33" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="50" cy="33" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/>` }
+];
+
+function renderMarquee() {
+  const groups = document.querySelectorAll("#itemMarquee .marquee__group");
+  if (!groups.length) return;
+
+  // Both groups get identical content — the CSS animation slides
+  // the track exactly one group-width (-50%), so group 2 has to
+  // pick up right where group 1 left off for a seamless loop.
+  const html = MARQUEE_ITEMS.map(item => `
+    <div class="marqueeItem" title="${item.name}">
+      <svg viewBox="0 0 64 64" role="img" aria-label="${item.name}">${item.svg}</svg>
+    </div>
+  `).join("");
+
+  groups.forEach(g => { g.innerHTML = html; });
+}
+
+// ===================================================
+// INTRO PARAGRAPH TYPEWRITER — types the paragraph out
+// character by character. Runs fresh on every page load
+// (nothing is stored), and starts the moment the
+// paragraph scrolls into view.
+// ===================================================
+function initTypedParagraph() {
+  const el = document.getElementById("introParagraph");
+  if (!el) return;
+
+  const fullText = el.textContent.trim().replace(/\s+/g, " ");
+  el.textContent = "";
+
+  const cursor = document.createElement("span");
+  cursor.className = "typedCursor";
+  cursor.textContent = "|";
+  el.appendChild(cursor);
+
+  let i = 0;
+  function typeNext() {
+    if (i < fullText.length) {
+      cursor.insertAdjacentText("beforebegin", fullText.charAt(i));
+      i++;
+      setTimeout(typeNext, 22);
+    } else {
+      setTimeout(() => cursor.remove(), 900);
+    }
+  }
+
+  if (!("IntersectionObserver" in window)) {
+    typeNext();
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        typeNext();
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  observer.observe(el);
+}
+
+// ===================================================
 // FADE-IN ON SCROLL — reveals .revealOnScroll elements
 // (toolboxes, dividers, footer, etc.) as they enter view.
 // ===================================================
@@ -1859,6 +1951,8 @@ document.addEventListener("DOMContentLoaded", function() {
   initCarouselManualControls();
   renderTestimonials();
   initStarPicker();
+  renderMarquee();
+  initTypedParagraph();
   initScrollReveal();
 
   const yearLegal  = document.getElementById("footerYearLegal");
