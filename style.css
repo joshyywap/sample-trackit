@@ -754,6 +754,14 @@ outline: none;
   }
 }
 
+@media(max-width: 320px){
+  *{
+    box-sizing: border-box;
+  }
+  html,body{
+    overflow-x: hidden;
+  }
+}
 /* =========================================================
    LARGE TABLET / SMALL LAPTOP  >= 768px
    ========================================================= */
