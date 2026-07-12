@@ -176,9 +176,13 @@ autocomplete="off"
   </div>
 </section>
 
-<div class="paragraph revealOnScroll">
+<hr class="plainDivider revealOnScroll" />
+
+<div class="paragraph revealOnScroll" >
 Need to borrow classroom items? You're in the right place! Borrow, return and keep track of items quickly and easily - all in one place.
 </div>
+
+<hr class="plainDivider revealOnScroll" />
 
 <!-- Borrow/Return: only visible when logged in (toggled via JS in updateMenuUI) -->
 <button id="bottone1" class="hiddenForGuest revealOnScroll" onclick="openBorrowModal()"><strong>BORROW ITEMS</strong></button>
@@ -191,26 +195,21 @@ Need to borrow classroom items? You're in the right place! Borrow, return and ke
 <div class="section-divider1 revealOnScroll"><span>SAMPLE ITEM</span></div>
 
 <!-- From Uiverse.io by PriyanshuGupta28 -->
-<div class="marquee revealOnScroll">
+<div class="marquee revealOnScroll" id="itemMarquee">
 <div class="marquee__inner">
-<div class="marquee__group">
-<span>SCREW DRIVER</span>
-<span>LAN TESTER</span>
-<span>DRILL SET</span>
-<span>PUNCH DOWN</span>
-<span>CRIMPING</span>
-<span>RANDOM</span>
+<div class="marquee__group"></div>
+<div class="marquee__group"></div>
+</div>
 </div>
 
-<div class="marquee__group">
-</div>
-</div>
-</div>
-</section>
+<!-- Sits right on the blue/orange seam: still part of the dark
+     hero band, but it's the last thing before the orange toolbox
+     band begins, so it visually bridges the two colors. -->
+<div class="section-divider section-divider--bridge revealOnScroll"><span>TOOLBOXES</span></div>
+
 </section>
 <!-- ================= AVAILABLE ITEMS / TOOLBOXES ================= -->
 <section class="band band--green">
-<div class="section-divider revealOnScroll"><span>TOOLBOXES</span></div>
 
 <!-- Search across every toolbox's items at once -->
 <div class="homeSearchWrap revealOnScroll">
@@ -544,7 +543,7 @@ Please go to the ICT Laboratory or ask for assistance from any 12-Dewey student 
       <span class="starPicker__star" data-value="5">★</span>
     </div>
 
-    <textarea id="ratingTextInput" class="inputField ratingTextarea" maxlength="240" placeholder="Tell us what you think (optional)"></textarea>
+    <textarea id="ratingTextInput" class="inputField ratingTextarea" maxlength="240" placeholder="Tell us what to improve. (optional)"></textarea>
     <p id="ratingFormError" class="modalError"></p>
     <button class="modalBtn" onclick="submitRating()">Submit</button>
   </div>
@@ -558,7 +557,7 @@ Please go to the ICT Laboratory or ask for assistance from any 12-Dewey student 
         About this website <span class="siteFooter__chev">▾</span>
       </button>
       <div class="siteFooter__panel" id="footerAbout">
-        <p>Trackit is an efficient, browser-based solution for managing classroom equipment such as screwdrivers, LAN testers, and drill sets. Each item is assigned a unique QR code, enabling fast, scan-based checkouts and returns. No additional server or account configuration is required beyond the login above.</p>
+        <p>Trackit is an efficient, browser-based solution for managing classroom equipment such as screwdrivers, and other tools. Each item is assigned a unique QR code, enabling fast, scan-based checkouts and returns. No additional server or account configuration is required beyond the login above.</p>
       </div>
     </div>
     <div class="siteFooter__col">
