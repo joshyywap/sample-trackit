@@ -5,6 +5,7 @@
   --container-max: 1200px;
   --gutter: clamp(16px, 4vw, 35px);
 }
+
 *,
 *::before,
 *::after {
@@ -12,19 +13,25 @@
   margin: 0;
   padding: 0;
 }
+
 html {
   scroll-behavior: smooth;
 }
+
+
+
 body {
   min-height: 100vh;
   overflow-x: hidden;
   width: 100%;
+  overscroll-behavior-x: none;
   font-family:sans-serif;
   background-color: auto;
 }
 body:has(#menuToggle:not(:checked)) {
   overflow: hidden;
 }
+
 img,
 video,
 svg {
@@ -32,19 +39,34 @@ svg {
   height: auto;
   display: block;
 }
+
+/* =========================================================
+   BASE / MOBILE-FIRST STYLES
+   ========================================================= */
+
 .paragraph {
-  text-align: center;
+  text-align: justify;
     display: flex;
     flex-wrap: wrap;
     font-weight:400;
     justify-content: center;
-    padding: 20px 0 0 0;
-    margin: 60px var(--gutter) 0 var(--gutter);
+    padding: 20px 10px 10px 10px;
+    margin: 20px var(--gutter) 20px var(--gutter);
     font-family: sans-serif;
     font-size: clamp(20px, 2.5vw, 18px);
     color: #ffffff;
     pointer-events: none;
     text-shadow: 0 0 20px #000000;
+}
+
+/* Plain horizontal divider lines that sit above/below the intro
+   paragraph (no text, just a centered rule) */
+.plainDivider {
+  width: min(520px, 90%);
+  height: 1.5px;
+  margin: 34px auto 0;
+  border: none;
+  background: rgba(255, 255, 255, 0.6);
 }
 
 h2 {
@@ -111,6 +133,10 @@ h2 {
 .event-wrapper-inp:checked + .bar {
   transform: none;
 }
+
+/* Fluid width: caps at 392px on wide screens like before, but shrinks to
+   fit small phones instead of overflowing the viewport. Height similarly
+   adapts to short viewports (landscape phones) instead of a fixed 800px. */
 .menu-container {
   background-color: white;
   color: darkviolet;
@@ -328,11 +354,10 @@ h2 {
 .card-image-container {
   width: 100%;
   height: 64%;
-  object-fit: cover;
+  object-fit: contain;
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  background-image: url("https://image.made-in-china.com/2f0j00ydutRFvMyAch/Hand-Tools-1-100mm-Cr-V-Steel-Cross-Phillips-Head-Screwdriver.jpg");
   border-radius: 10px;
   margin-bottom: 12px;
   overflow: hidden;
@@ -374,6 +399,10 @@ h2 {
   color: #1797b8;
   cursor: default;
 }
+
+/* =========================================================
+   AUTH — LOGIN/REGISTER CHOICE BUTTONS
+   ========================================================= */
 #authChoice {
   display: flex;
   flex-direction: column;
@@ -412,6 +441,11 @@ h2 {
   margin-top: 8px;
   
 }
+
+/* =========================================================
+   AUTH FORM — From Uiverse.io by vinodjangid07
+   Fluid width so it never overflows very narrow phones.
+   ========================================================= */
 .form_main {
   width: min(320px, 100%);
   display: flex;
@@ -452,6 +486,7 @@ h2 {
   color: black;
   font-size: clamp(.8em, 3.4vw, .9em);
   font-weight: 500;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.222);
   box-sizing: border-box;
   padding-left: 30px;
 outline: none;
@@ -526,6 +561,18 @@ outline: none;
 .eyeIcon:hover {
   opacity: 1;
 }
+
+
+
+
+/* =========================================================
+   MODALS (Add Item, Borrow, Return, Toolbox view, etc.)
+   Backdrop is now a near-solid white wash + blur, so whatever is
+   behind (background image, page content) is fully hidden - not just
+   faded/blurred-but-visible. Padding uses a fluid fallback plus an
+   iOS safe-area-aware override (ignored gracefully by browsers that
+   don't support env(), which keeps the fallback instead).
+   ========================================================= */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -603,7 +650,7 @@ outline: none;
 .item-image-preview {
   width: 100%;
   max-height: 150px;
-  object-fit: cover;
+  object-fit:contain;
   border-radius: 10px;
   margin: 10px 0;
 }
@@ -733,11 +780,21 @@ outline: none;
     width: calc(25% - var(--gutter));
   }
 }
+
+/* =========================================================
+   LARGE DESKTOP  >= 1440px
+   ========================================================= */
 @media (min-width: 1440px) {
   .cards-wrapper {
     max-width: 1320px;
   }
 }
+
+/* =========================================================
+   PAGE BANDS — each major section gets its own full-bleed
+   background color so the page reads as distinct zones while
+   scrolling, per design request.
+   ========================================================= */
 .band {
   width: 100%;
   padding-top: 0px;
@@ -753,11 +810,16 @@ outline: none;
 
 .band--green {
   background:#dc9750;
+  padding-top: 22px;
 }
 
 .band--gray {
   background: #4a4d55;
 }
+
+/* =========================================================
+   SECTION DIVIDER ("--- AVAILABLE ITEMS ---")
+   ========================================================= */
 .section-divider {
   display: flex;
   align-items: center;
@@ -765,7 +827,7 @@ outline: none;
   font-family: "Lucida Sans", sans-serif;
   font-weight: 700;
   letter-spacing: 2px;
-  font-size: clamp(13px, 2vw, 16px);
+  font-size: clamp(30px, 2vw, 16px);
   text-shadow: 0 0 20px #000;
   margin: 0 var(--gutter) 20px;
 }
@@ -776,6 +838,26 @@ outline: none;
   border-bottom: 2px solid rgba(255, 255, 255, 0.6);
   margin: 0 12px;
 }
+
+/* Modifier for the TOOLBOXES divider specifically: it now lives at
+   the very bottom of the dark hero band, right where the orange
+   toolbox band begins, so it needs its own top spacing to clear the
+   marquee above it and no bottom margin since the orange starts
+   immediately under it. */
+.section-divider--bridge {
+  margin-top: 57px;
+    margin-bottom: -58px;
+    padding-bottom: 0px;
+}
+
+/* =========================================================
+   TOOLBOX GRID (home page)
+   FIXED: cards previously had a fixed 280px width PLUS fixed
+   asymmetric margins (20/35/10/40px) - together that's 355px of
+   required space, wider than most phone screens, causing overflow/
+   clipping on small devices. Now fluid: width 100% capped at 320px,
+   centered via flex, spacing via `gap` instead of hardcoded margins.
+   ========================================================= */
 .toolbox-grid {
   display: flex;
   flex-direction: column;
@@ -785,6 +867,10 @@ outline: none;
   max-width: var(--container-max);
   margin: 0 auto;
 }
+
+/* From tablet width up, lay the boxes out as a centered, wrapping row
+   instead of one long column — makes better use of the space and keeps
+   every box perfectly centered regardless of how many fit per row. */
 @media (min-width: 700px) {
   .toolbox-grid {
     flex-direction: row;
@@ -840,12 +926,14 @@ outline: none;
   outline: none;
   background: transparent;
 }
+
+/* Toolbox graphic — plain picture, no lid-open animation. */
 .toolboxGraphic {
   position: relative;
   width: min(230px, 78vw);
   aspect-ratio: 1 / 1;
   margin: 0 auto 8px;
-  background-image: url('toolbox_yellow.jpeg');
+  background-image: url('toolbox_yellow.png');
   background-repeat: no-repeat;
   background-size: 100% 100%;
   filter: drop-shadow(0 14px 16px rgba(0, 0, 0, 0.45));
@@ -865,7 +953,7 @@ outline: none;
   color: #fff;
   font-size: clamp(16px, 4.2vw, 20px);
   margin-bottom: 4px;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 2px 10px rgb(0 0 0);
   pointer-events: none;
 }
 
@@ -873,9 +961,13 @@ outline: none;
   font-size: clamp(10px, 2.6vw, 12px);
   color: #eafff2;
   opacity: 0.85;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgb(0 0 0);
   pointer-events: none;
 }
+
+/* =========================================================
+   SEARCH BAR (toolbox view, delete item, borrower list)
+   ========================================================= */
 .searchBar {
   position: relative;
   display: flex;
@@ -893,6 +985,12 @@ outline: none;
 .searchInput {
   padding-left: 34px;
 }
+
+/* =========================================================
+   GENERIC LIST ROWS (toolbox items, delete list, lost & found,
+   borrower list all reuse this). Given a light gray card background
+   so each entry reads clearly against the now-white modal backdrop.
+   ========================================================= */
 .itemListBox {
   margin-top: 15px;
   max-height: 320px;
@@ -994,8 +1092,15 @@ outline: none;
   background: #d9f7e8;
   color: #0b7a45;
 }
+
+/* =========================================================
+   ITEM CAROUSEL (recently added items) — auto-advancing hero
+   banner, still manually scrollable/swipeable. Lives directly
+   below the navbar for both guests and logged-in users.
+   ========================================================= */
 .itemCarouselSection {
   width: 100%;
+  object-fit: contain;
   max-width: var(--container-max);
   margin: -160px auto 0;
   padding: 0 var(--gutter);
@@ -1006,6 +1111,7 @@ outline: none;
   width: 100%;
   border-radius: 18px;
   overflow: hidden;
+  object-fit: contain;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -1014,6 +1120,7 @@ outline: none;
   width: 100%;
   height: clamp(190px, 42vw, 300px);
   overflow-x: auto;
+  object-fit: contain;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
@@ -1026,13 +1133,15 @@ outline: none;
 
 .itemCarouselSlide {
   position: relative;
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  background-size: cover;
-  background-position: center;
-  background-color: #14141c;
-  display: flex;
-  align-items: flex-end;
+    flex: 0 0 100%;
+    scroll-snap-align: start;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: azure;
+    display: flex;
+    mix-blend-mode: lighten;
+    align-items: flex-end;
 }
 
 .itemCarouselSlide__overlay {
@@ -1092,6 +1201,11 @@ outline: none;
     text-shadow: 0 0 15px #000;
     align-items: center;
 }
+
+/* =========================================================
+   SCROLL-REVEAL — fade + rise in as sections enter the
+   viewport. Toggled by IntersectionObserver in script.js.
+   ========================================================= */
 .revealOnScroll {
   opacity: 0;
   transform: translateY(28px);
@@ -1102,6 +1216,9 @@ outline: none;
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Modal panels "rise" into place — pairs with the toolbox lid-open
+   animation so the item list feels like it emerges from the box. */
 .modal-box {
   transform: translateY(40px) scale(0.94);
   opacity: 0;
@@ -1112,6 +1229,10 @@ outline: none;
   transform: translateY(0) scale(1);
   opacity: 1;
 }
+
+/* =========================================================
+   RATINGS & TESTIMONIALS (sits above the footer, outside it)
+   ========================================================= */
 .testimonialSection {
   margin-top: 0;
   padding: 50px var(--gutter);
@@ -1271,6 +1392,8 @@ outline: none;
 }
 
 .testimonialRateBtn:hover { transform: translateY(-2px); }
+
+/* ---- Star picker inside the "Rate this website" modal ---- */
 .starPicker {
   display: flex;
   justify-content: center;
@@ -1305,6 +1428,10 @@ outline: none;
     flex-wrap: nowrap;
     align-content: center;
 }
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
 .siteFooter {
   margin-top: 0;
   background: #0b1c42;
@@ -1321,6 +1448,7 @@ outline: none;
   padding-bottom: 30px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
+
 .siteFooter__heading {
   font-family: "Lucida Sans", sans-serif;
   font-weight: 700;
@@ -1328,6 +1456,7 @@ outline: none;
   margin-bottom: 8px;
   color: #fff;
 }
+
 .siteFooter__toggle {
   width: 100%;
   background: none;
@@ -1396,6 +1525,10 @@ outline: none;
   padding: 20px 0;
   font-size: 0.85em;
 }
+
+/* =========================================================
+   TOOLBOX CHOOSER (inside Add Item / Lost and Found modals)
+   ========================================================= */
 .fieldLabel {
   text-align: left;
   display: block;
@@ -1427,6 +1560,9 @@ outline: none;
   cursor: pointer;
   transition: all 0.15s;
 }
+
+/* If a toolbox chooser has an odd number of chips (e.g. 5 toolboxes),
+   make the last one span the full row instead of sitting half-empty. */
 .toolboxChooser .toolboxChip:last-child:nth-child(odd) {
   flex: 1 1 100%;
 }
@@ -1436,6 +1572,11 @@ outline: none;
   background: #8000ff;
   color: #fff;
 }
+
+/* =========================================================
+   PILL BUTTONS (Add/Delete/Lost and Found/Borrower List/Inventory/
+   Logout) styled to match the login #button look and feel
+   ========================================================= */
 .pillBtn {
   position: relative;
   display: block;
@@ -1490,6 +1631,10 @@ outline: none;
 .pillBtn.danger:hover {
   background-color: #b8123f;
 }
+
+/* =========================================================
+   BORROW RECORD INFO ("See Info" detail panel)
+   ========================================================= */
 .infoSection {
   margin-bottom: 16px;
   padding-bottom: 12px;
@@ -1525,7 +1670,7 @@ outline: none;
 /* From Uiverse.io by PriyanshuGupta28 */ 
 .marquee {
   pointer-events: none;
-  margin: 0;
+  margin: 50px 0 -30px 0;
   padding-bottom: 40px;
   overflow: hidden;
   /* hide the scrolling overflow */
@@ -1559,19 +1704,25 @@ outline: none;
 
 .marquee__group {
   display: flex;
+  align-items: center;
 }
 
-.marquee__group span {
-margin: 0 1.5rem;
-    white-space: nowrap;
-    background: #9d0202db;
-    color: white;
-    text-align: center;
-    padding: 15px 20px 10px 15px;
-    border-radius: 6px;
-    align-items: center;
-    font-family: sans-serif;
-    font-size: 1.2rem;
+/* Each sample item is now just its picture — no pill/box background,
+   no label text, uniform square footprint so every icon lines up
+   the same size regardless of its own artwork. */
+.marqueeItem {
+  flex: 0 0 auto;
+  width: 78px;
+  height: 78px;
+  margin: 0 24px;
+  color: #ffffff;
+  opacity: 0.94;
+}
+
+.marqueeItem svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 @keyframes marquee {
@@ -1600,6 +1751,9 @@ margin: 0 1.5rem;
   border-bottom: 2px solid rgba(255, 255, 255, 0.6);
   margin: 0 12px;
 }
+/* =========================================================
+   INVENTORY — toolbox section title
+   ========================================================= */
 .inventorySectionTitle {
   text-align: center;
   font-family: "Lucida Sans", sans-serif;
@@ -1704,10 +1858,12 @@ margin: 0 1.5rem;
     -webkit-transform: translateY(-300%);
     transform: translateY(-300%);
   }
+
   85% {
     -webkit-transform: translateY(-402%);
     transform: translateY(-402%);
   }
+
   100% {
     -webkit-transform: translateY(-400%);
     transform: translateY(-400%);
