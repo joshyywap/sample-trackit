@@ -55,10 +55,11 @@ svg {
 /* =========================================================
    BASE / MOBILE-FIRST STYLES
    ========================================================= */
-
 .paragraph {
   text-align: justify;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     flex-wrap: wrap;
     font-weight:400;
     justify-content: center;
@@ -69,6 +70,23 @@ svg {
     color: #ffffff;
     pointer-events: none;
     text-shadow: 0 0 20px #000000;
+}
+
+.paragraphHeading {
+  font-weight: 800;
+  font-size: clamp(20px, 3vw, 24px);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.paragraphText {
+  text-align: center;
+  font-weight:300;
+  font-size: 15px;
+  color: inherit;
+  max-width: 720px;
 }
 
 /* Plain horizontal divider lines that sit above/below the intro
@@ -754,14 +772,6 @@ outline: none;
   }
 }
 
-@media(max-width: 320px){
-  *{
-    box-sizing: border-box;
-  }
-  html,body{
-    overflow-x: hidden;
-  }
-}
 /* =========================================================
    LARGE TABLET / SMALL LAPTOP  >= 768px
    ========================================================= */
@@ -800,7 +810,15 @@ outline: none;
     width: calc(25% - var(--gutter));
   }
 }
-
+@media(max-width: 320px){
+  *{
+    box-sizing: border-box;
+  }
+  html,body{
+    overflow-x: hidden;
+  
+  }
+}
 /* =========================================================
    LARGE DESKTOP  >= 1440px
    ========================================================= */
@@ -831,6 +849,11 @@ outline: none;
 .band--green {
   background:#dc9750;
   padding-top: 22px;
+}
+
+.band--marquee {
+  background: #5d6b6b;
+  padding-top: 30px;
 }
 
 .band--gray {
@@ -865,7 +888,12 @@ outline: none;
    marquee above it and no bottom margin since the orange starts
    immediately under it. */
 .section-divider--bridge {
-  margin-top: 57px;
+ margin-top: 63px;
+    margin-bottom: -19px;
+    padding-bottom: 0px;
+}
+.section-divider1.section-divider--bridge {
+ margin-top: 135px;
     margin-bottom: -58px;
     padding-bottom: 0px;
 }
@@ -1138,7 +1166,7 @@ outline: none;
 .itemCarousel {
   display: flex;
   width: 100%;
-  height: clamp(190px, 42vw, 300px);
+  height: clamp(300px, 42vw, 300px);
   overflow-x: auto;
   object-fit: contain;
   scroll-snap-type: x mandatory;
@@ -1719,7 +1747,7 @@ outline: none;
 .marquee__inner {
   display: flex;
   width: max-content;
-  animation: marquee 15s linear infinite;
+  animation: marquee 25s linear infinite;
 }
 
 .marquee__group {
@@ -1732,16 +1760,22 @@ outline: none;
    the same size regardless of its own artwork. */
 .marqueeItem {
   flex: 0 0 auto;
-  width: 78px;
-  height: 78px;
-  margin: 0 24px;
-  color: #ffffff;
-  opacity: 0.94;
+    width: 130px;
+    height: 140px;
+    margin: 0 30px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 18px rgb(0 0 0 / 65%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 13px;
 }
 
-.marqueeItem svg {
+.marqueeItem img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   display: block;
 }
 
@@ -1760,7 +1794,7 @@ outline: none;
   font-family: "Lucida Sans", sans-serif;
   font-weight: 700;
   letter-spacing: 2px;
-  font-size: clamp(13px, 2vw, 16px);
+  font-size: clamp(30px, 2vw, 16px);
   text-shadow: 0 0 20px #000;
   margin: 100px var(--gutter) 20px;
 }
